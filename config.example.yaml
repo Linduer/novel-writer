@@ -1,0 +1,113 @@
+# 长篇小说写作助手配置文件
+
+# 项目基本信息
+project:
+  name: "全民海上求生：我的乐园会打捞神仙"
+  author: "作者名"
+  target_words: 1200000  # 120万字
+  chapters: 960
+  volumes: 10
+
+# GLM模型配置
+llm:
+  # 主写手模型（创意写作）
+  writer:
+    model: "glm-5.2"  # 或 glm-5.3
+    temperature: 0.7
+    max_tokens: 4096
+    api_key: "your_api_key_here"
+    api_base: "https://open.bigmodel.cn/api/paas/v4"
+  
+  # 档案员模型（分析提取）
+  archivist:
+    model: "glm-5.2"
+    temperature: 0.3
+    max_tokens: 2048
+    api_key: "your_api_key_here"
+    api_base: "https://open.bigmodel.cn/api/paas/v4"
+  
+  # 审查员模型（质量检查）
+  reviewer:
+    model: "glm-5.2"
+    temperature: 0.5
+    max_tokens: 2048
+    api_key: "your_api_key_here"
+    api_base: "https://open.bigmodel.cn/api/paas/v4"
+
+# 记忆系统配置
+memory:
+  # 向量数据库配置
+  vector_db:
+    type: "local"  # local 或 chroma
+    path: "./data/{project}/memory/vectors"
+    embedding_model: "text-embedding-3-small"  # 用于生成嵌入的模型
+  
+  # 事实表配置
+  fact_table:
+    path: "./data/{project}/memory/facts.jsonl"
+    max_facts_per_chapter: 20
+  
+  # 摘要配置
+  summary:
+    chapter_summary_max_words: 200
+    volume_summary_max_words: 500
+
+# 上下文引擎配置
+context:
+  # Token预算分配（总计100%）
+  budget:
+    system_rules: 5        # 系统规则
+    character_cards: 15    # 角色卡片
+    world_settings: 10     # 世界观设定
+    facts: 10              # 动态事实表
+    summaries: 20          # 历史摘要
+    current_draft: 30      # 当前草稿
+    output_reserve: 20     # 输出预留
+  
+  # 检索配置
+  retrieval:
+    enabled: true
+    top_k: 5               # 每类检索返回的条目数
+    similarity_threshold: 0.7
+
+# 写作配置
+writing:
+  chapter_length:
+    min_words: 1000
+    max_words: 1500
+    target_words: 1250
+  
+  # 伏笔管理
+  foreshadowing:
+    auto_detect: true
+    reminder_chapters: 50  # 提醒回收的提前章数
+
+# 一致性检查配置
+consistency:
+  # 角色检查
+  character:
+    check_position: true
+    check_abilities: true
+    check_relationships: true
+  
+  # 时间线检查
+  timeline:
+    enabled: true
+    auto_update: true
+
+# 存储配置
+storage:
+  # 项目数据目录
+  data_dir: "./data/{project}"
+  
+  # 备份配置
+  backup:
+    enabled: true
+    interval_chapters: 10  # 每10章备份一次
+    backup_dir: "./backups/{project}"
+
+# 日志配置
+logging:
+  level: "INFO"
+  file: "./logs/{project}.log"
+  console: true

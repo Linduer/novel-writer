@@ -1,0 +1,24 @@
+# 长篇小说写作助手依赖
+
+# 核心依赖
+openai>=1.0.0           # GLM API兼容接口
+pyyaml>=6.0             # 配置文件解析
+rich>=13.0              # 终端美化输出
+click>=8.0              # 命令行工具
+
+# 向量数据库
+chromadb>=0.4.0         # 本地向量数据库
+sentence-transformers>=2.2.0  # 文本嵌入
+
+# 文件处理
+python-docx>=0.8.11     # Word文档处理
+markdown>=3.4           # Markdown解析
+
+# 数据处理
+pandas>=2.0             # 数据分析
+numpy>=1.24             # 数组操作
+
+# 工具库
+tiktoken>=0.5.0         # Token计数
+pydantic>=2.0           # 数据验证
+python-dotenv>=1.0      # 环境变量
