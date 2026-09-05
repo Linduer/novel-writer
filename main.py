@@ -23,6 +23,8 @@ from core.memory import MemoryManager
 from core.context import ContextEngine
 from core.llm import LLMManager
 from core.checker import ConsistencyChecker
+from core.foreshadowing import ForeshadowingManager
+from core.chapter_connection import ChapterConnectionManager
 
 console = Console()
 
@@ -86,14 +88,14 @@ def write(chapter, volume):
     config = load_config()
     
     # 初始化各个管理器
-    storage = StorageManager(config)
-    memory = MemoryManager(config)
-    context = ContextEngine(config)
+    project_name = config['project']['name']
+    storage = StorageManager(config, project_name)
+    memory = MemoryManager(config, project_name)
+    context = ContextEngine(config, project_name)
     llm = LLMManager(config)
-    checker = ConsistencyChecker(config)
+    checker = ConsistencyChecker(config, project_name)
     
     # 1. 加载项目数据
-    project_name = config['project']['name']
     project_data = storage.load_project(project_name)
     
     # 2. 构建上下文
@@ -104,9 +106,9 @@ def write(chapter, volume):
         volume=volume
     )
     
-    # 3. 生成草稿
-    console.print("[cyan]正在生成章节草稿...[/cyan]")
-    draft = llm.generate_chapter(
+    # 3. 生成草稿（带章节衔接）
+    console.print("[cyan]正在生成章节草稿（考虑章节衔接）...[/cyan]")
+    draft = llm.generate_chapter_with_connection(
         context=writing_context,
         chapter=chapter,
         volume=volume
@@ -146,11 +148,10 @@ def review(chapter, auto_fix):
     console.print(Panel(f"[bold yellow]审查章节：第{chapter}章[/bold yellow]"))
     
     config = load_config()
-    storage = StorageManager(config)
-    llm = LLMManager(config)
-    checker = ConsistencyChecker(config)
-    
     project_name = config['project']['name']
+    storage = StorageManager(config, project_name)
+    llm = LLMManager(config)
+    checker = ConsistencyChecker(config, project_name)
     
     # 加载章节
     chapter_content = storage.load_chapter(project_name, chapter)
@@ -208,10 +209,9 @@ def query(query, query_type):
     console.print(Panel(f"[bold magenta]查询：{query}[/bold magenta]"))
     
     config = load_config()
-    storage = StorageManager(config)
-    memory = MemoryManager(config)
-    
     project_name = config['project']['name']
+    storage = StorageManager(config, project_name)
+    memory = MemoryManager(config, project_name)
     
     # 执行查询
     results = memory.search(project_name, query, query_type)
@@ -230,10 +230,9 @@ def status():
     console.print(Panel("[bold cyan]项目状态[/bold cyan]"))
     
     config = load_config()
-    storage = StorageManager(config)
-    memory = MemoryManager(config)
-    
     project_name = config['project']['name']
+    storage = StorageManager(config, project_name)
+    memory = MemoryManager(config, project_name)
     
     # 获取项目统计
     stats = storage.get_project_stats(project_name)
@@ -284,6 +283,95 @@ def import_data():
     
     # 这里需要实现实际的导入逻辑
     console.print("[yellow]导入功能需要进一步实现[/yellow]")
+
+@cli.command()
+@click.option('--chapter', type=int, help='查看指定章节的伏笔状态')
+def foreshadowing(chapter):
+    """查看伏笔状态"""
+    console.print(Panel("[bold magenta]伏笔状态[/bold magenta]"))
+    
+    config = load_config()
+    project_name = config['project']['name']
+    fs_manager = ForeshadowingManager(config, project_name)
+    checker = ConsistencyChecker(config, project_name)
+    
+    if chapter:
+        # 查看指定章节的伏笔状态
+        console.print(f"[cyan]第{chapter}章伏笔状态：[/cyan]")
+        status = checker.check_foreshadowing_status(chapter, {'config': {'name': project_name}})
+        
+        table = Table(title=f"第{chapter}章伏笔统计")
+        table.add_column("指标", style="cyan")
+        table.add_column("数值", style="white")
+        
+        table.add_row("伏笔总数", str(status['foreshadowing_count']))
+        table.add_row("已解决", str(status['resolved_count']))
+        table.add_row("待解决", str(status['pending_count']))
+        table.add_row("本章引入", str(status['introduced_this_chapter']))
+        table.add_row("本章解决", str(status['resolved_this_chapter']))
+        
+        console.print(table)
+        
+        # 显示长期未解决伏笔
+        if status.get('unresolved_old'):
+            console.print("\n[yellow]长期未解决伏笔：[/yellow]")
+            for fs in status['unresolved_old']:
+                console.print(f"  - {fs['id']}: {fs['description'][:50]}... (等待{fs['chapters_pending']}章)")
+    else:
+        # 查看总体伏笔状态
+        console.print("[cyan]总体伏笔状态：[/cyan]")
+        summary = fs_manager.get_foreshadowing_summary(project_name)
+        
+        table = Table(title="伏笔统计")
+        table.add_column("指标", style="cyan")
+        table.add_column("数值", style="white")
+        
+        table.add_row("伏笔总数", str(summary['total']))
+        table.add_row("活跃伏笔", str(summary['active']))
+        table.add_row("已解决伏笔", str(summary['resolved']))
+        
+        console.print(table)
+        
+        # 显示所有活跃伏笔
+        active_foreshadowing = fs_manager.get_active_foreshadowing(project_name)
+        if active_foreshadowing:
+            console.print("\n[bold]活跃伏笔列表：[/bold]")
+            for fs in active_foreshadowing:
+                console.print(f"  [cyan]{fs.id}[/cyan]: {fs.description[:80]}...")
+                console.print(f"    引入于：{fs.introduced_in}")
+
+@cli.command()
+@click.option('--start', type=int, default=1, help='起始章节')
+@click.option('--end', type=int, default=10, help='结束章节')
+def connection(start, end):
+    """查看章节衔接状态"""
+    console.print(Panel(f"[bold blue]章节衔接状态（第{start}-{end}章）[/bold blue]"))
+    
+    config = load_config()
+    project_name = config['project']['name']
+    conn_manager = ChapterConnectionManager(config, project_name)
+    
+    # 生成衔接报告
+    console.print("[cyan]正在生成衔接报告...[/cyan]")
+    report = conn_manager.generate_connection_report(project_name, start, end)
+    
+    console.print(report)
+
+@cli.command()
+@click.argument('chapter', type=int)
+def transition(chapter):
+    """查看章节过渡提示"""
+    console.print(Panel(f"[bold green]第{chapter}章过渡提示[/bold green]"))
+    
+    config = load_config()
+    project_name = config['project']['name']
+    conn_manager = ChapterConnectionManager(config, project_name)
+    
+    # 生成过渡提示
+    prompt = conn_manager.generate_chapter_transition_prompt(project_name, chapter)
+    
+    console.print("[cyan]过渡提示：[/cyan]")
+    console.print(prompt)
 
 if __name__ == '__main__':
     cli()

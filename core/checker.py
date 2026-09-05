@@ -1,19 +1,25 @@
 """
 一致性检查模块
 
-负责检查小说内容的一致性，包括角色、时间线、地点等
+负责检查小说内容的一致性，包括角色、时间线、地点、伏笔等
 """
 
 import re
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 
+# 导入伏笔管理器
+from .foreshadowing import ForeshadowingManager
+
 class ConsistencyChecker:
     """一致性检查器"""
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict, project_name: str = ""):
         self.config = config
         self.consistency_config = config.get('consistency', {})
+        
+        # 初始化伏笔管理器
+        self.foreshadowing_manager = ForeshadowingManager(config, project_name)
     
     def check_chapter(self, chapter: int, draft: str, project_data: Dict) -> Dict:
         """检查章节一致性"""
@@ -38,6 +44,10 @@ class ConsistencyChecker:
         # 5. 能力体系检查
         ability_issues = self._check_ability_consistency(draft, project_data)
         issues.extend(ability_issues)
+        
+        # 6. 伏笔检查（新增）
+        foreshadowing_issues = self._check_foreshadowing_consistency(chapter, draft, project_data)
+        issues.extend(foreshadowing_issues)
         
         return {
             'chapter': chapter,
@@ -142,6 +152,39 @@ class ConsistencyChecker:
         
         return issues
     
+    def _check_foreshadowing_consistency(self, chapter: int, draft: str, 
+                                        project_data: Dict) -> List[str]:
+        """检查伏笔一致性"""
+        issues = []
+        
+        # 获取项目名称
+        project_name = project_data.get('config', {}).get('name', '')
+        
+        if not project_name:
+            return issues
+        
+        # 检查伏笔状态
+        foreshadowing_check = self.foreshadowing_manager.check_foreshadowing_for_chapter(
+            project_name, chapter
+        )
+        
+        # 检查长期未解决伏笔
+        unresolved_foreshadowing = foreshadowing_check.get('unresolved_old_foreshadowing', [])
+        for fs in unresolved_foreshadowing:
+            issues.append(f"伏笔 {fs['id']} 已等待 {fs['chapters_pending']} 章未解决：{fs['description'][:50]}...")
+        
+        # 检测章节中解决的伏笔
+        resolved_in_chapter = self.foreshadowing_manager.detect_resolved_foreshadowing(
+            project_name, chapter, draft
+        )
+        
+        # 标记解决的伏笔
+        for fs_id in resolved_in_chapter:
+            self.foreshadowing_manager.resolve_foreshadowing(project_name, fs_id, f"ch{chapter:03d}")
+            issues.append(f"伏笔 {fs_id} 已在本章解决")
+        
+        return issues
+    
     def auto_fix(self, content: str, issues: List[str]) -> str:
         """自动修复简单问题"""
         fixed_content = content
@@ -185,12 +228,33 @@ class ConsistencyChecker:
     
     def check_foreshadowing_status(self, chapter: int, project_data: Dict) -> Dict:
         """检查伏笔状态"""
-        # 这里可以实现伏笔状态检查
-        # 例如：检查伏笔是否在适当的时候被回收
+        # 获取项目名称
+        project_name = project_data.get('config', {}).get('name', '')
+        
+        if not project_name:
+            return {
+                'chapter': chapter,
+                'foreshadowing_count': 0,
+                'resolved_count': 0,
+                'pending_count': 0,
+                'issues': []
+            }
+        
+        # 检查伏笔状态
+        foreshadowing_check = self.foreshadowing_manager.check_foreshadowing_for_chapter(
+            project_name, chapter
+        )
+        
+        # 获取活跃和已解决伏笔
+        active_foreshadowing = self.foreshadowing_manager.get_active_foreshadowing(project_name)
+        resolved_foreshadowing = self.foreshadowing_manager.get_resolved_foreshadowing(project_name)
         
         return {
             'chapter': chapter,
-            'foreshadowing_count': 0,
-            'resolved_count': 0,
-            'pending_count': 0
+            'foreshadowing_count': len(active_foreshadowing) + len(resolved_foreshadowing),
+            'resolved_count': len(resolved_foreshadowing),
+            'pending_count': len(active_foreshadowing),
+            'unresolved_old': foreshadowing_check.get('unresolved_old_foreshadowing', []),
+            'introduced_this_chapter': foreshadowing_check.get('introduced_this_chapter', 0),
+            'resolved_this_chapter': foreshadowing_check.get('actually_resolved', 0)
         }

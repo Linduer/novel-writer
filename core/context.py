@@ -9,13 +9,21 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 
+# 导入新模块
+from .foreshadowing import ForeshadowingManager
+from .chapter_connection import ChapterConnectionManager
+
 class ContextEngine:
     """上下文引擎"""
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict, project_name: str = ""):
         self.config = config
         self.budget_config = config['context']['budget']
         self.retrieval_config = config['context']['retrieval']
+        
+        # 初始化伏笔管理器和章节衔接管理器
+        self.foreshadowing_manager = ForeshadowingManager(config, project_name)
+        self.connection_manager = ChapterConnectionManager(config, project_name)
     
     def build_writing_context(self, project_data: Dict, chapter: int, 
                             volume: Optional[int] = None) -> Dict:
@@ -23,6 +31,17 @@ class ContextEngine:
         # 计算当前卷
         if volume is None:
             volume = (chapter - 1) // 96 + 1  # 每卷96章
+        
+        # 获取项目名称
+        project_name = project_data.get('config', {}).get('name', '')
+        
+        # 获取伏笔信息
+        active_foreshadowing = self.foreshadowing_manager.get_active_foreshadowing(project_name)
+        foreshadowing_check = self.foreshadowing_manager.check_foreshadowing_for_chapter(project_name, chapter)
+        
+        # 获取章节衔接信息
+        connection_check = self.connection_manager.check_chapter_connection(project_name, chapter)
+        transition_prompt = self.connection_manager.generate_chapter_transition_prompt(project_name, chapter)
         
         # 初始化上下文
         context = {
@@ -35,7 +54,12 @@ class ContextEngine:
             'summaries': self._load_relevant_summaries(project_data, chapter),
             'current_outline': self._load_chapter_outline(project_data, chapter, volume),
             'previous_chapter': self._load_previous_chapter_summary(project_data, chapter),
-            'next_chapter_hint': self._load_next_chapter_hint(project_data, chapter)
+            'next_chapter_hint': self._load_next_chapter_hint(project_data, chapter),
+            # 新增：伏笔和衔接信息
+            'active_foreshadowing': [fs.description for fs in active_foreshadowing[:10]],  # 限制数量
+            'foreshadowing_check': foreshadowing_check,
+            'chapter_connection': connection_check,
+            'transition_prompt': transition_prompt
         }
         
         # 计算Token预算
@@ -206,6 +230,10 @@ class ContextEngine:
             ])
             formatted_parts.append(f"## 世界观设定\n{world_text}")
         
+        # 章节衔接提示（重要：章前衔接）
+        if context.get('transition_prompt'):
+            formatted_parts.append(f"## 章节衔接提示\n{context['transition_prompt']}")
+        
         # 章节大纲
         if context.get('current_outline'):
             formatted_parts.append(f"## 本章大纲\n{context['current_outline']}")
@@ -217,5 +245,27 @@ class ContextEngine:
         # 下一章提示
         if context.get('next_chapter_hint'):
             formatted_parts.append(f"## 下一章提示\n{context['next_chapter_hint']}")
+        
+        # 伏笔信息（重要：伏笔管理）
+        if context.get('active_foreshadowing'):
+            foreshadowing_text = "\n".join([
+                f"- {fs}" for fs in context['active_foreshadowing']
+            ])
+            formatted_parts.append(f"## 活跃伏笔\n{foreshadowing_text}")
+        
+        # 伏笔检查信息
+        foreshadowing_check = context.get('foreshadowing_check', {})
+        if foreshadowing_check.get('unresolved_old_foreshadowing'):
+            unresolved_text = "\n".join([
+                f"- {fs['id']}: {fs['description'][:50]}... (等待{fs['chapters_pending']}章)"
+                for fs in foreshadowing_check['unresolved_old_foreshadowing']
+            ])
+            formatted_parts.append(f"## 长期未解决伏笔（需要关注）\n{unresolved_text}")
+        
+        # 章节衔接检查
+        chapter_connection = context.get('chapter_connection', {})
+        if chapter_connection.get('issues'):
+            issues_text = "\n".join([f"- {issue}" for issue in chapter_connection['issues']])
+            formatted_parts.append(f"## 章节衔接问题\n{issues_text}")
         
         return "\n\n".join(formatted_parts)

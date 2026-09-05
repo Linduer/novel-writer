@@ -55,6 +55,25 @@ class LLMManager:
         
         return response.choices[0].message.content
     
+    def generate_chapter_with_connection(self, context: Dict, chapter: int, 
+                                        volume: Optional[int] = None) -> str:
+        """生成带章节衔接的章节内容"""
+        # 构建增强的提示词，包含衔接要求
+        prompt = self._build_connected_chapter_prompt(context, chapter, volume)
+        
+        # 调用GLM生成
+        response = self.writer_client.chat.completions.create(
+            model=self.llm_config['writer']['model'],
+            messages=[
+                {"role": "system", "content": self._get_connected_writer_system_prompt()},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=self.llm_config['writer']['temperature'],
+            max_tokens=self.llm_config['writer']['max_tokens']
+        )
+        
+        return response.choices[0].message.content
+    
     def _build_chapter_prompt(self, context: Dict, chapter: int, 
                             volume: Optional[int] = None) -> str:
         """构建章节生成提示词"""
@@ -97,6 +116,77 @@ class LLMManager:
 5. 不使用原作人名与商标词
 6. 不写'命运的齿轮开始转动'
 7. 不写'这一刻，他终于明白了'"""
+    
+    def _get_connected_writer_system_prompt(self) -> str:
+        """获取带衔接要求的写手系统提示词"""
+        return """你是一位专业的网络小说作家，擅长创作轻喜剧风格的玄幻小说，并且特别擅长章节之间的衔接。
+
+你的写作风格特点：
+1. 轻快、嘴碎、理直气壮的荒诞
+2. 惨是垫场，嗨是正片
+3. 笑点来自处境反差和档案乱码的毒舌
+4. 爽点当天结算，绝不过夜
+5. 章尾必留钩，每章末尾吊住下一章
+
+章节衔接要求：
+1. 章首必须与前一章章尾自然衔接
+2. 如果前章以悬念结尾，本章开头应该回应或延续这个悬念
+3. 如果前章以危机结尾，本章开头应该展示危机的后果或延续
+4. 章首应该适当提及前章的关键元素，保持连贯性
+5. 章尾要设计新的钩子，为下一章做铺垫
+
+你需要遵循的规则：
+1. 每章1000-1500字
+2. 保持角色性格一致
+3. 遵循世界观设定
+4. 按照大纲推进剧情
+5. 不使用原作人名与商标词
+6. 不写'命运的齿轮开始转动'
+7. 不写'这一刻，他终于明白了'
+8. 章首必须自然衔接前章，不能生硬跳跃"""
+    
+    def _build_connected_chapter_prompt(self, context: Dict, chapter: int, 
+                                       volume: Optional[int] = None) -> str:
+        """构建带衔接要求的章节生成提示词"""
+        if volume is None:
+            volume = (chapter - 1) // 96 + 1
+        
+        prompt_parts = [
+            f"请根据以下信息创作第{chapter}章（第{volume}卷）的内容。",
+            f"要求：每章1000-1500字，保持角色性格一致，遵循世界观设定。",
+            "",
+            "## 章节衔接信息（重要！）"
+        ]
+        
+        # 添加衔接提示
+        transition_prompt = context.get('transition_prompt', '')
+        if transition_prompt:
+            prompt_parts.append(transition_prompt)
+        else:
+            prompt_parts.append("这是第一章，没有前文需要衔接。")
+        
+        # 添加衔接检查信息
+        chapter_connection = context.get('chapter_connection', {})
+        if chapter_connection.get('issues'):
+            prompt_parts.append("\n## 衔接问题提醒")
+            for issue in chapter_connection['issues']:
+                prompt_parts.append(f"- {issue}")
+        
+        prompt_parts.extend([
+            "",
+            "## 上下文信息",
+            context.get('formatted_context', ''),
+            "",
+            "## 创作要求",
+            "1. 开头要有吸引力，自然衔接前章",
+            "2. 中间要有冲突和推进",
+            "3. 结尾要留有悬念，设计钩子",
+            "4. 保持轻快、嘴碎、理直气壮的荒诞风格",
+            "5. 爽点当天结算，绝不过夜",
+            "6. 章尾钩子要明确，为下一章做铺垫"
+        ])
+        
+        return "\n".join(prompt_parts)
     
     def extract_facts(self, chapter_content: str, context: Dict) -> List[Dict]:
         """从章节内容中提取事实"""

@@ -13,13 +13,16 @@ from datetime import datetime
 class MemoryManager:
     """记忆管理器"""
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict, project_name: str = ""):
         self.config = config
-        self.base_path = Path(config['storage']['data_dir'])
+        data_dir = config['storage']['data_dir']
+        if project_name:
+            data_dir = data_dir.replace('{project}', project_name)
+        self.base_path = Path(data_dir)
     
     def update_facts(self, project_name: str, chapter: int, facts: List[Dict]):
         """更新事实表"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         facts_dir = project_dir / 'memory' / 'facts'
         facts_dir.mkdir(parents=True, exist_ok=True)
         
@@ -52,7 +55,7 @@ class MemoryManager:
     
     def get_facts(self, project_name: str, chapter_range: Optional[List[int]] = None) -> List[Dict]:
         """获取事实表"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         facts_file = project_dir / 'memory' / 'facts' / 'facts.jsonl'
         
         if not facts_file.exists():
@@ -73,7 +76,7 @@ class MemoryManager:
     
     def update_summaries(self, project_name: str, chapter: int, summary: str, summary_type: str = 'chapter'):
         """更新摘要"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         summaries_dir = project_dir / 'memory' / 'summaries'
         summaries_dir.mkdir(parents=True, exist_ok=True)
         
@@ -92,7 +95,7 @@ class MemoryManager:
     def get_summaries(self, project_name: str, chapter_range: Optional[List[int]] = None, 
                      summary_type: str = 'chapter') -> List[Dict]:
         """获取摘要"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         summaries_dir = project_dir / 'memory' / 'summaries'
         
         if not summaries_dir.exists():
@@ -155,7 +158,7 @@ class MemoryManager:
     
     def get_stats(self, project_name: str) -> Dict:
         """获取记忆统计信息"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         
         stats = {
             'facts_count': 0,
@@ -183,7 +186,7 @@ class MemoryManager:
     
     def export_memory(self, project_name: str, output_path: Path):
         """导出记忆数据"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         
         export_data = {
             'project': project_name,
@@ -227,7 +230,7 @@ class MemoryManager:
     
     def clear_memory(self, project_name: str):
         """清空记忆数据"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         memory_dir = project_dir / 'memory'
         
         if memory_dir.exists():

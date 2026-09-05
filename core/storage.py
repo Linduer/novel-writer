@@ -14,13 +14,17 @@ from typing import Dict, List, Optional, Any
 class StorageManager:
     """存储管理器"""
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict, project_name: str = ""):
         self.config = config
-        self.base_path = Path(config['storage']['data_dir'])
+        data_dir = config['storage']['data_dir']
+        if project_name:
+            data_dir = data_dir.replace('{project}', project_name)
+        self.base_path = Path(data_dir)
+        self.project_name = project_name
     
     def create_project(self, project_name: str) -> Path:
         """创建项目目录结构"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         
         # 创建目录结构
         directories = [
@@ -60,7 +64,7 @@ class StorageManager:
     
     def load_project(self, project_name: str) -> Dict:
         """加载项目数据"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         
         if not project_dir.exists():
             raise FileNotFoundError(f"项目不存在：{project_name}")
@@ -135,7 +139,7 @@ class StorageManager:
     
     def save_draft(self, project_name: str, chapter: int, content: str) -> Path:
         """保存章节草稿"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         draft_dir = project_dir / 'chapters' / 'drafts'
         draft_dir.mkdir(parents=True, exist_ok=True)
         
@@ -149,7 +153,7 @@ class StorageManager:
     
     def load_chapter(self, project_name: str, chapter: int) -> Optional[str]:
         """加载章节内容"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         
         # 优先加载最终版
         final_path = project_dir / 'chapters' / 'final' / f"chapter_{chapter:04d}.txt"
@@ -167,7 +171,7 @@ class StorageManager:
     
     def save_reviewed_chapter(self, project_name: str, chapter: int, content: str) -> Path:
         """保存审查后的章节"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         final_dir = project_dir / 'chapters' / 'final'
         final_dir.mkdir(parents=True, exist_ok=True)
         
@@ -181,7 +185,7 @@ class StorageManager:
     
     def get_project_stats(self, project_name: str) -> Dict:
         """获取项目统计信息"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         
         if not project_dir.exists():
             return {}
@@ -197,7 +201,7 @@ class StorageManager:
     
     def backup_project(self, project_name: str) -> Path:
         """备份项目"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         backup_dir = Path(self.config['storage']['backup']['backup_dir'].format(project=project_name))
         backup_dir.mkdir(parents=True, exist_ok=True)
         
@@ -225,7 +229,7 @@ class StorageManager:
     
     def delete_project(self, project_name: str) -> bool:
         """删除项目"""
-        project_dir = self.base_path / project_name
+        project_dir = self.base_path
         
         if not project_dir.exists():
             return False
