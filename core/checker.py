@@ -36,7 +36,8 @@ class ConsistencyChecker:
         self.config = config
         self.project_name = project_name
         self.consistency_config = config.get('consistency', {})
-        self.data_dir = Path(config.get('data_dir', './data')).format(project=project_name)
+        data_dir_str = config.get('data_dir', './data').replace('{project}', project_name)
+        self.data_dir = Path(data_dir_str)
 
         # 初始化管理器
         self.foreshadowing_manager = ForeshadowingManager(config, project_name)
@@ -495,26 +496,23 @@ class ConsistencyChecker:
         """检查约束一致性"""
         issues = []
 
-        # 获取当前章节的约束
-        constraints = self.constraint_manager.get_constraints_for_chapter(chapter)
+        # 获取所有Tier1约束
+        tier1_constraints = self.constraint_manager.get_tier(Tier.FOUNDATION)
 
-        for constraint in constraints:
-            rule = constraint.get('rule', '')
-            tier = constraint.get('tier', '')
-            source = constraint.get('source', '')
+        for constraint in tier1_constraints:
+            rule = constraint.content if hasattr(constraint, 'content') else str(constraint)
 
             # Tier1约束必须检查
-            if tier == 'foundation':
-                # 检查约束是否被违反
-                if '不许' in rule:
-                    forbidden_content = rule.replace('不许', '')
-                    if forbidden_content in draft:
-                        issues.append({
-                            'type': 'constraint_violation',
-                            'severity': 'error',
-                            'message': f"违反Tier1约束：{rule}",
-                            'suggestion': f"删除或改写：{forbidden_content}"
-                        })
+            if '不许' in rule or '禁止' in rule:
+                # 提取禁止内容
+                forbidden_content = rule.replace('不许', '').replace('禁止', '')
+                if forbidden_content and forbidden_content in draft:
+                    issues.append({
+                        'type': 'constraint_violation',
+                        'severity': 'error',
+                        'message': f"违反Tier1约束：{rule}",
+                        'suggestion': f"删除或改写：{forbidden_content}"
+                    })
 
         return issues
 
@@ -794,7 +792,7 @@ class ConsistencyChecker:
         report_lines = [
             f"# 第{chapter}章一致性检查报告",
             f"检查时间：{check_result.get('timestamp', '未知')}",
-            f"检查结果：{'✅ 通过' if check_result['passed'] else '❌ 未通过'}",
+            f"检查结果：{'[PASS]' if check_result['passed'] else '[FAIL]'}",
             "",
             "## 摘要",
             f"- 总问题数：{check_result['summary']['total']}",
@@ -811,25 +809,25 @@ class ConsistencyChecker:
             infos = [i for i in check_result['issues'] if i['severity'] == 'info']
 
             if errors:
-                report_lines.append("## ❌ 错误（必须修复）")
+                report_lines.append("## [ERROR] 错误（必须修复）")
                 for i, issue in enumerate(errors, 1):
                     report_lines.append(f"{i}. [{issue['type']}] {issue['message']}")
                     report_lines.append(f"   建议：{issue['suggestion']}")
                 report_lines.append("")
 
             if warnings:
-                report_lines.append("## ⚠️ 警告（建议修复）")
+                report_lines.append("## [WARNING] 警告（建议修复）")
                 for i, issue in enumerate(warnings, 1):
                     report_lines.append(f"{i}. [{issue['type']}] {issue['message']}")
                     report_lines.append(f"   建议：{issue['suggestion']}")
                 report_lines.append("")
 
             if infos:
-                report_lines.append("## ℹ️ 信息")
+                report_lines.append("## [INFO] 信息")
                 for i, issue in enumerate(infos, 1):
                     report_lines.append(f"{i}. [{issue['type']}] {issue['message']}")
         else:
-            report_lines.append("## ✅ 未发现一致性问题")
+            report_lines.append("## [OK] 未发现一致性问题")
 
         return "\n".join(report_lines)
 
