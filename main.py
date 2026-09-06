@@ -106,6 +106,13 @@ def write(chapter, volume):
         volume=volume
     )
     
+    # 显示Token使用情况
+    token_report = context.get_token_usage_report(writing_context)
+    console.print(f"\n[dim]{token_report}[/dim]")
+    
+    if writing_context.get('is_over_budget'):
+        console.print("[red]⚠ 上下文已超出Token预算，请调整配置[/red]")
+    
     # 3. 生成草稿（带章节衔接）
     console.print("[cyan]正在生成章节草稿（考虑章节衔接）...[/cyan]")
     draft = llm.generate_chapter_with_connection(

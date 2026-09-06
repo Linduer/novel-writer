@@ -54,16 +54,39 @@ memory:
 
 # 上下文引擎配置
 context:
-  # Token预算分配（总计100%）
+  # 总Token窗口大小
+  # GLM-5.2/5.3 支持128K，未来模型可能支持更大
+  # 实际可用 = 总窗口 - 输出预留
+  total_window: 128000      # 总上下文窗口（Token数）
+
+  # Token预算分配（总计100%，基于total_window）
   budget:
-    system_rules: 5        # 系统规则
-    character_cards: 15    # 角色卡片
-    world_settings: 10     # 世界观设定
-    facts: 10              # 动态事实表
-    summaries: 20          # 历史摘要
-    current_draft: 30      # 当前草稿
-    output_reserve: 20     # 输出预留
-  
+    system_rules: 3        # 系统规则 + 风格约束
+    character_cards: 5     # 角色卡片（仅本章出场角色）
+    world_settings: 5      # 世界观设定（相关片段）
+    facts: 5               # 动态事实表（相关事实）
+    summaries: 8           # 历史摘要（前N章摘要）
+    previous_chapters: 30  # 前文正文（最近N章的原文）
+    current_outline: 5     # 本章大纲
+    foreshadowing: 3       # 伏笔信息
+    transition: 3          # 章节衔接提示
+    output_reserve: 33     # 输出预留（生成章节的空间）
+
+  # 前文读取策略（核心配置）
+  previous_chapters:
+    # 读取策略：最近N章原文 + 更早章节的摘要
+    # 例如：read_chapters=5 表示读最近5章的完整原文
+    #       summary_chapters=20 表示读第6-25章的摘要
+    read_chapters: 5       # 读取最近N章的完整原文
+    summary_chapters: 20   # 更早章节读取摘要的数量
+
+    # 每章摘要的最大Token数
+    summary_max_tokens: 300
+
+    # 前文原文的截断策略
+    # 当前文总Token超过预算时，从最远的章节开始截断
+    truncate_from: "oldest"  # oldest=从最远的截断, newest=从最近的截断
+
   # 检索配置
   retrieval:
     enabled: true

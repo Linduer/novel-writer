@@ -80,8 +80,11 @@ class LLMManager:
         if volume is None:
             volume = (chapter - 1) // 96 + 1
         
+        # Token使用摘要
+        token_info = f"（输入Token: {context.get('total_input_tokens', 0):,} / {context.get('total_window', 128000):,}）"
+        
         prompt_parts = [
-            f"请根据以下信息创作第{chapter}章（第{volume}卷）的内容。",
+            f"请根据以下信息创作第{chapter}章（第{volume}卷）的内容。{token_info}",
             f"要求：每章1000-1500字，保持角色性格一致，遵循世界观设定。",
             "",
             "## 上下文信息",
@@ -202,8 +205,11 @@ class LLMManager:
         if volume is None:
             volume = (chapter - 1) // 96 + 1
         
+        # Token使用摘要
+        token_info = f"（输入Token: {context.get('total_input_tokens', 0):,} / {context.get('total_window', 128000):,}）"
+        
         prompt_parts = [
-            f"请根据以下信息创作第{chapter}章（第{volume}卷）的内容。",
+            f"请根据以下信息创作第{chapter}章（第{volume}卷）的内容。{token_info}",
             f"要求：每章1000-1500字，保持角色性格一致，遵循世界观设定。",
             "",
             "## 章节衔接信息（重要！）"
