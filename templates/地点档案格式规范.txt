@@ -1,0 +1,295 @@
+# ============================================================
+# 地点档案格式规范 v1.0
+# 所有地点必须按此格式填写
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、字段分级（对应三级约束体系）
+# ════════════════════════════════════════════════════════════
+
+## 第一档：基础性（绝对不可偏离）— Tier1
+
+一旦写定永远不改。
+
+  name                    地点名称（唯一标识）
+  type                    地点类型（见取值表）
+  region                  所属区域（在哪个大区域里）
+  first_appearance        首次出场章节
+  description             地点描述（一句话定性）
+  function                地点功能（在故事里干什么）
+  constraints             地点的硬规则/禁忌
+  key_events              在此发生的关键事件（标注章节）
+
+## 第二档：可演变（随剧情自然变化）— Tier2
+
+  owner                   地点归属（谁控制/管理）
+  status                  地点状态（active/destroyed/abandoned/captured）
+  control_changes         控制权变化（谁→谁，哪章）
+  damage_level            损坏程度（完好/轻损/重损/废墟）
+  unlock_chapter          解锁/发现章节
+  destroy_chapter         毁灭/废弃章节
+  linked_facility         关联设施（乐园设施对应）
+
+## 第三档：可偏离（根据行文情况调整）— Tier3
+
+  atmosphere              氛围描写（每章可不同）
+  appearance_description  具体外观（每章可不同）
+  sensory_details         感官细节（声音/气味/温度）
+
+
+# ════════════════════════════════════════════════════════════
+#  二、取值表
+# ════════════════════════════════════════════════════════════
+
+## type（地点类型）
+
+| 值          | 说明           | 示例                    |
+|-------------|----------------|-------------------------|
+| facility    | 乐园设施       | 造浪池、大喇叭          |
+| zone        | 乐园区域       | 儿童区、成人区          |
+| sea_area    | 海域           | 近海废墟、千帆海域      |
+| landmark    | 关键地标       | 归墟、仙城、龙喉        |
+| base        | 势力据点       | 义盟首府、掠夺王庭      |
+| dungeon     | 副本/秘境      | 沉没仙城、冰洋圣域      |
+| city        | 城市/聚落      | 新大陆、旧大陆          |
+| passage     | 通道/航线      | 风暴走廊、沧澜海沟      |
+| event       | 事件地点       | 洪水原址、开业地点      |
+
+## region（区域划分）
+
+| 值          | 对应卷    | 章节范围    |
+|-------------|-----------|-------------|
+| 近海废墟    | 卷一      | ch001-096   |
+| 千帆海域    | 卷二      | ch097-192   |
+| 黑市环礁    | 卷三      | ch193-288   |
+| 风暴走廊    | 卷四      | ch289-384   |
+| 沉没仙城    | 卷五      | ch385-480   |
+| 沧澜海沟    | 卷六      | ch481-576   |
+| 移动灯塔    | 卷七      | ch577-672   |
+| 冰洋圣域    | 卷八      | ch673-768   |
+| 归墟外围    | 卷九      | ch769-864   |
+| 新大陆      | 卷十      | ch865-960   |
+
+## status（地点状态）
+
+| 值          | 说明           |
+|-------------|----------------|
+| active      | 正常使用中     |
+| damaged     | 损坏但可用     |
+| destroyed   | 已毁灭         |
+| abandoned   | 已废弃         |
+| captured    | 被占领         |
+| locked      | 封锁/未解锁    |
+| revealed    | 已发现/显露    |
+
+## 关键事件类型
+
+| 类型     | 说明           | 示例                    |
+|----------|----------------|-------------------------|
+| battle   | 战斗/战争      | 满潮夜、终战            |
+| plot     | 剧情转折       | 坦白夜、反转            |
+| death    | 角色死亡       | 殉园、坐化              |
+| unlock   | 能力解锁       | 设施首秀、境界突破      |
+| romance  | 感情线         | 倒戈、告白              |
+| ritual   | 仪式/庆典       | 开业、免票              |
+| mystery  | 谜团揭晓       | 真相、秘密              |
+
+
+# ════════════════════════════════════════════════════════════
+#  三、字段说明
+# ════════════════════════════════════════════════════════════
+
+## 基础信息
+- name:               地点名称（唯一标识）
+- type:               地点类型（见取值表）
+- region:             所属区域（在哪个大区域里）
+- first_appearance:   首次出场章节（chNNNN格式）
+- description:        地点描述（一句话定性）
+- function:           地点功能（在故事里干什么）
+
+## 规则与事件
+- constraints:        地点的硬规则/禁忌
+- key_events:         在此发生的关键事件（数组，每项标注章节）
+
+## 状态追踪
+- owner:              地点归属（谁控制/管理）
+- status:             当前状态（见取值表）
+- control_changes:    控制权变化历史（数组）
+- damage_level:       损坏程度（完好/轻损/重损/废墟）
+- unlock_chapter:     解锁/发现章节
+- destroy_chapter:    毁灭/废弃章节
+- linked_facility:    关联设施（乐园设施对应）
+
+## 氛围描写
+- atmosphere:         氛围描写（一句话）
+- appearance_description: 具体外观（每章可不同）
+- sensory_details:    感官细节（声音/气味/温度）
+
+
+# ════════════════════════════════════════════════════════════
+#  四、与能力体系的绑定
+# ════════════════════════════════════════════════════════════
+
+地点和能力体系的对应关系：
+
+地点 → 能力体系
+───────────────────────────────
+造浪池     → 设施.造浪池（神通：主炮）
+大喇叭     → 设施.大喇叭（神通：漩涡吞舰阵）
+彩虹滑道   → 设施.彩虹滑道（神通：六道水影分身）
+漂流河     → 设施.漂流河（神通：巡逻航线）
+室内恒温   → 设施.室内恒温水世界（神通：领域雏形）
+海啸池     → 设施.海啸池（神通：压卷杀招）
+儿童戏水池 → 设施.儿童戏水池（神通：起手水术）
+
+地点的 key_events 与伏笔系统关联：
+  key_events 中的章节 → 伏笔的引入/推进/回收章节
+
+
+# ════════════════════════════════════════════════════════════
+#  五、示例
+# ════════════════════════════════════════════════════════════
+
+# ── 示例1：乐园设施（Tier1）──
+
+- name: 造浪池
+  type: facility
+  region: 近海废墟
+  first_appearance: ch001
+  description: "乐园主炮区，产生巨浪"
+  function: "游客尖叫=装填弹药，尖叫越多火力越强"
+  constraints:
+    - "游客尖叫=装填弹药"
+    - "满潮夜全池概率翻倍"
+    - "每次使用消耗乐园3个月流水"
+  key_events:
+    - chapter: ch095
+      type: battle
+      event: "满潮夜一浪拍碎黑帮船队"
+    - chapter: ch555
+      type: unlock
+      event: "方舟点火夜"
+  owner: 乐园
+  status: active
+  linked_facility: 造浪池
+  atmosphere: "浪声、尖叫声、水花四溅"
+  sensory_details: "咸湿的海风，混合着游客的尖叫和浪花拍打声"
+
+# ── 示例2：海域（Tier2）──
+
+- name: 近海废墟
+  type: sea_area
+  region: 近海废墟
+  first_appearance: ch001
+  description: "浅层现代文明废墟"
+  function: "故事发生的主要海域"
+  constraints:
+    - "水位刻度是全书可见的倒计时"
+    - "水位=渊的围城进度"
+  key_events:
+    - chapter: ch001
+      type: plot
+      event: "乐园开业，洪水来袭"
+    - chapter: ch095
+      type: battle
+      event: "满潮夜"
+  owner: 无主海域
+  status: active
+  damage_level: 轻损
+  atmosphere: "废墟漂浮，海面偶尔闪过金光"
+
+# ── 示例3：关键地标（Tier1）──
+
+- name: 归墟
+  type: landmark
+  region: 归墟外围
+  first_appearance: ch769
+  description: "东海尽头，天下之水的去处"
+  function: "五门体系的门首所在，渊的本体封于门内"
+  constraints:
+    - "水位=围城进度"
+    - "五钥集齐可启动方舟全功率"
+    - "终战地点"
+  key_events:
+    - chapter: ch769
+      type: mystery
+      event: "归墟外围首次出现"
+    - chapter: ch864
+      type: battle
+      event: "终战"
+  owner: 渊
+  status: active
+  atmosphere: "深海的压迫感，无尽的黑暗"
+
+# ── 示例4：城市（Tier3）──
+
+- name: 新大陆
+  type: city
+  region: 新大陆
+  first_appearance: ch865
+  description: "退洪后露出的新陆地"
+  function: "故事终局的发生地"
+  constraints:
+    - "退洪后才出现"
+    - "终局开业地点"
+  key_events:
+    - chapter: ch957
+      type: ritual
+      event: "搁浅开业"
+    - chapter: ch959
+      type: ritual
+      event: "免票"
+  owner: 乐园
+  status: active
+  atmosphere: "阳光、沙滩、新世界的希望"
+  sensory_details: "温暖的阳光，海浪拍打沙滩的声音"
+
+# ── 示例5：事件地点（Tier2）──
+
+- name: 洪水原址
+  type: event
+  region: 近海废墟
+  first_appearance: ch001
+  description: "疯狂水世界原址"
+  function: "故事起点，沈浮的执念来源"
+  constraints:
+    - "沈浮的乐园在这里被毁"
+    - "八百万的账从这里开始"
+  key_events:
+    - chapter: ch001
+      type: plot
+      event: "洪水来袭，乐园被毁"
+    - chapter: ch960
+      type: ritual
+      event: "终局免票开业"
+  owner: 无主
+  status: destroyed
+  damage_level: 废墟
+  atmosphere: "废墟、积水、招牌漂浮"
+  sensory_details: "潮湿的空气，断裂的钢筋，漂浮的杂物"
+
+
+# ════════════════════════════════════════════════════════════
+#  六、与其他系统的关联
+# ════════════════════════════════════════════════════════════
+
+地点档案与其他系统的关联：
+
+1. 能力体系
+   - 乐园设施 → 设施即神通
+   - 地点的 linked_facility 字段绑定
+
+2. 伏笔系统
+   - key_events 中的章节 → 伏笔的引入/推进/回收
+
+3. 角色档案
+   - 地点的 owner 字段 → 角色的 key_relationships
+   - 地点的 key_events → 角色的 growth_arc
+
+4. 时间线
+   - 地点的 key_events → 时间线的事件节点
+   - 地点的 first_appearance → 时间线的地点引入
+
+5. 上下文引擎
+   - 当前章节出场地点 → 注入prompt
+   - 地点的 atmosphere → 帮助LLM营造氛围
