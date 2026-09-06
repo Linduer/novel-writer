@@ -1,8 +1,9 @@
 """
-存储管理模块
+存储管理模块 v2.0
 
 负责项目文件的读写和管理
 每章一个文件夹，支持元数据、草稿/最终版切换
+优化：添加缓存、批量操作、文件索引
 """
 
 import os
@@ -12,6 +13,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Any
+from functools import lru_cache
 
 
 class StorageManager:
@@ -24,6 +26,19 @@ class StorageManager:
             data_dir = data_dir.replace('{project}', project_name)
         self.base_path = Path(data_dir)
         self.project_name = project_name
+        
+        # 缓存
+        self._cache = {
+            'chapters': None,
+            'project_config': None,
+        }
+        
+        # 文件索引
+        self._index = {
+            'chapters': {},
+            'characters': {},
+            'world': {},
+        }
 
     def _chapter_dir(self, chapter: int, chapter_name: str = "") -> Path:
         """获取章节文件夹路径：ch{num}_{name}"""
@@ -276,3 +291,176 @@ class StorageManager:
             return False
         shutil.rmtree(self.base_path)
         return True
+    
+    # ── 缓存管理 ──────────────────────────────────────────
+    
+    def clear_cache(self):
+        """清除缓存"""
+        self._cache = {
+            'chapters': None,
+            'project_config': None,
+        }
+        self._index = {
+            'chapters': {},
+            'characters': {},
+            'world': {},
+        }
+    
+    def _build_chapter_index(self):
+        """构建章节索引"""
+        if self._cache['chapters'] is not None:
+            return
+        
+        chapters_dir = self.base_path / 'chapters'
+        if not chapters_dir.exists():
+            self._cache['chapters'] = []
+            return
+        
+        result = []
+        for d in chapters_dir.iterdir():
+            if d.is_dir() and d.name.startswith('ch'):
+                meta_file = d / 'metadata.json'
+                if meta_file.exists():
+                    meta = json.loads(meta_file.read_text(encoding='utf-8'))
+                    result.append(meta)
+                    # 构建索引
+                    chapter_num = meta.get('chapter', 0)
+                    self._index['chapters'][chapter_num] = {
+                        'path': d,
+                        'meta': meta,
+                    }
+        
+        result.sort(key=lambda x: x.get('chapter', 0))
+        self._cache['chapters'] = result
+    
+    def get_chapter_path(self, chapter: int) -> Optional[Path]:
+        """获取章节路径（使用索引）"""
+        self._build_chapter_index()
+        if chapter in self._index['chapters']:
+            return self._index['chapters'][chapter]['path']
+        return None
+    
+    def chapter_exists(self, chapter: int) -> bool:
+        """检查章节是否存在"""
+        return self.get_chapter_path(chapter) is not None
+    
+    def get_chapter_status(self, chapter: int) -> Optional[str]:
+        """获取章节状态"""
+        meta = self.load_chapter_meta(chapter)
+        return meta.get('status')
+    
+    def get_all_chapters(self) -> List[int]:
+        """获取所有章节号"""
+        self._build_chapter_index()
+        return sorted(self._index['chapters'].keys())
+    
+    def get_chapters_by_status(self, status: str) -> List[Dict]:
+        """按状态获取章节"""
+        self._build_chapter_index()
+        return [
+            meta for meta in self._cache['chapters']
+            if meta.get('status') == status
+        ]
+    
+    def get_chapter_range(self, start: int, end: int) -> List[Dict]:
+        """获取章节范围"""
+        self._build_chapter_index()
+        return [
+            meta for meta in self._cache['chapters']
+            if start <= meta.get('chapter', 0) <= end
+        ]
+    
+    # ── 批量操作 ──────────────────────────────────────────
+    
+    def batch_save(self, chapters: List[Dict]) -> List[Path]:
+        """批量保存章节"""
+        results = []
+        for ch_data in chapters:
+            chapter = ch_data.get('chapter')
+            content = ch_data.get('content', '')
+            chapter_name = ch_data.get('chapter_name', '')
+            status = ch_data.get('status', 'draft')
+            
+            if chapter and content:
+                path = self.save_chapter(chapter, content, chapter_name, status)
+                results.append(path)
+        
+        # 清除缓存
+        self.clear_cache()
+        
+        return results
+    
+    def batch_update_status(self, chapters: List[int], status: str) -> int:
+        """批量更新章节状态"""
+        updated = 0
+        for chapter in chapters:
+            meta = self.load_chapter_meta(chapter)
+            if meta:
+                meta['status'] = status
+                meta['updated_at'] = datetime.now().isoformat()
+                meta_file = self.get_chapter_path(chapter) / 'metadata.json'
+                if meta_file.exists():
+                    meta_file.write_text(
+                        json.dumps(meta, ensure_ascii=False, indent=2),
+                        encoding='utf-8'
+                    )
+                    updated += 1
+        
+        # 清除缓存
+        self.clear_cache()
+        
+        return updated
+    
+    # ── 文件优化 ──────────────────────────────────────────
+    
+    def optimize_storage(self) -> Dict:
+        """优化存储空间"""
+        stats = {
+            'removed_empty': 0,
+            'removed_duplicate': 0,
+            'compressed': 0,
+        }
+        
+        chapters_dir = self.base_path / 'chapters'
+        if not chapters_dir.exists():
+            return stats
+        
+        # 删除空文件夹
+        for d in chapters_dir.iterdir():
+            if d.is_dir():
+                files = list(d.iterdir())
+                if not files:
+                    d.rmdir()
+                    stats['removed_empty'] += 1
+        
+        # 清除缓存
+        self.clear_cache()
+        
+        return stats
+    
+    def get_storage_stats(self) -> Dict:
+        """获取存储统计"""
+        stats = {
+            'total_chapters': 0,
+            'total_size': 0,
+            'by_status': {
+                'draft': 0,
+                'final': 0,
+            },
+        }
+        
+        self._build_chapter_index()
+        
+        for meta in self._cache['chapters']:
+            stats['total_chapters'] += 1
+            status = meta.get('status', 'draft')
+            if status in stats['by_status']:
+                stats['by_status'][status] += 1
+        
+        # 计算总大小
+        if self.base_path.exists():
+            for file in self.base_path.rglob('*'):
+                if file.is_file():
+                    stats['total_size'] += file.stat().st_size
+        
+        return stats
