@@ -19,10 +19,11 @@
   origin                  出身来历
   personality             性格底色（底层人格，不是情绪状态）
   abilities.天赋          天赋类型（innate，不可后天获得）
-  abilities.境界突破节点  已写定的突破章节（如：江河402）
+  abilities.境界上限      能力天花板（写死）
   constraints             硬规则
   signature_items         标志性物件（反复出场）
   appearance.memorable_detail  独特外貌细节（标志性特征）
+  equipment.特殊          特殊装备（绑定角色）
 
 ## 第二档：可演变（随行文自然变化）— Tier2
 
@@ -33,9 +34,12 @@
   appearance.signature    外观变化（换装备/留疤）
   emotional_baseline      情绪基线随经历改变
   catchphrases            口头禅会演变
-  abilities.境界          实际境界提升
+  abilities.境界          实际境界提升（abilities.json追踪）
   abilities.战斗方式      战斗方式随能力变化
-  abilities.特殊          特殊能力（后天获得的）
+  abilities.特殊能力      特殊能力（后天获得的）
+  equipment.*             装备变化（换武器/升级装备）
+  inventory.消耗品       消耗品数量变化
+  inventory.关键物品     关键物品获取/失去
   key_relationships       关系类型变化
   secrets                 秘密可能被揭晓
   status                  在世状态（active→dead）
@@ -52,6 +56,7 @@
   speaking_style.细节     同样报价式吐槽，具体台词每章不同
   role_function           核心功能不变，每章具体作用可微调
   personality_arc         总方向不变，措辞可调整
+  inventory.消耗品.数量  消耗品具体数量每章可变
 
 
 # ════════════════════════════════════════════════════════════
@@ -84,12 +89,34 @@
 - speaking_style:   说话风格描述（一句话）
 - catchphrases:     高频词/口头禅（3-5个，数组格式）
 
-## 能力
+## 能力（静态设计）
 - abilities:
     天赋:         天赋类型和效果（innate，Tier1不可变）
-    境界:         当前境界（Tier2可演变，无修为写"无"）
-    特殊:         特殊能力或限制（后天获得的放这里）
+    境界上限:     这个角色能达到的最高境界（天花板）
+    特殊能力:     后天获得的能力（acquired）
     战斗方式:     怎么打架（不写战斗的角色写"不参战"）
+    能力成长:     能力随剧情变化的说明（与growth_arc配合）
+
+## 装备（静态设计）
+- equipment:
+    主手:         主要武器/工具
+    副手:         副武器/盾牌
+    防具:         防护装备
+    饰品:         饰品/挂件（1-2个）
+    特殊:         特殊装备（如乐园的设施权限）
+
+## 物品（静态设计）
+- inventory:
+    固定物品:     一直持有的物品（与signature_items配合）
+    消耗品:       可消耗的物品（药水/弹药等）
+    关键物品:     推动剧情的重要物品（标注获取/失去章节）
+
+## 能力状态（动态，与abilities.json绑定）
+- ability_state:
+    文件位置:     data/{项目名}/memory/abilities.json
+    更新方式:     每章写完后自动更新
+    查询命令:     python main.py abilities --character [角色名]
+    说明:         此字段不在档案中填写，由系统自动维护
 
 ## 出场规划
 - appearances:

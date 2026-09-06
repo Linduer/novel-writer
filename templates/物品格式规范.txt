@@ -1,0 +1,280 @@
+# ============================================================
+# 物品格式规范 v1.0
+# 所有物品必须按此格式填写
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、字段分级（对应三级约束体系）
+# ════════════════════════════════════════════════════════════
+
+## 第一档：基础性（绝对不可偏离）— Tier1
+
+一旦写定永远不改。
+
+  name                    物品名称（唯一标识）
+  type                    物品类型（见取值表）
+  rarity                  稀有度（见取值表）
+  description             物品描述（一句话）
+  origin                  物品来历（从哪来的）
+  owner                   物品归属（属于谁）
+  constraints             使用限制/禁忌
+
+## 第二档：可演变（随剧情自然变化）— Tier2
+
+  durability              耐久度（使用次数/损坏进度）
+  enhancement             强化等级（+1到+15）
+  current_holder          当前持有者（可能转移）
+  is_destroyed            是否已损坏/销毁
+  acquisition_chapter     获取章节
+  destruction_chapter     失去/销毁章节
+
+## 第三档：可偏离（根据行文情况调整）— Tier3
+
+  appearance_description  具体外观描写（每章可不同）
+  usage_description       具体使用方式（每章可不同）
+
+
+# ════════════════════════════════════════════════════════════
+#  二、取值表
+# ════════════════════════════════════════════════════════════
+
+## type（物品类型）
+
+| 值         | 说明       | 示例                    |
+|------------|------------|-------------------------|
+| weapon     | 武器       | 剑、枪、钩子            |
+| armor      | 防具       | 盔甲、盾牌              |
+| accessory  | 饰品       | 项链、戒指              |
+| consumable | 消耗品     | 药水、弹药              |
+| key_item   | 关键物品   | 钥匙、地图、信物        |
+| tool       | 工具       | 检票钳、笔记本          |
+| pet        | 契约生物   | 海兽、坐骑              |
+| facility   | 设施权限   | 乐园设施                |
+| currency   | 货币       | 信仰值、金币            |
+| material   | 材料       | 矿石、布料              |
+| scroll     | 卷轴/技能书 | 技能书、配方           |
+
+## rarity（稀有度）
+
+| 值      | 说明     | 概率   |
+|---------|----------|--------|
+| common  | 普通     | 70%    |
+| uncommon| 优秀     | 20%    |
+| rare    | 稀有     | 8%     |
+| epic    | 史诗     | 1.5%   |
+| legend  | 传说     | 0.4%   |
+| mythic  | 神话     | 0.1%   |
+
+## rarity 对应光色（打捞系统）
+
+| 稀有度 | 光色 | 说明 |
+|--------|------|------|
+| common | 白光 | "垃圾"（后文必须翻案） |
+| uncommon | 白光 | 稍好的"垃圾" |
+| rare | 紫光 | 出图纸或英灵 |
+| epic | 紫光 | 高级图纸或英灵 |
+| legend | 金光 | 出神器 |
+| mythic | 金光 | 终极神器 |
+
+## 状态标记
+
+| 值        | 说明       |
+|-----------|------------|
+| intact    | 完好       |
+| damaged   | 损坏       |
+| broken    | 毁坏       |
+| lost      | 丢失       |
+| consumed  | 已消耗     |
+| transferred | 已转移  |
+
+
+# ════════════════════════════════════════════════════════════
+#  三、字段说明
+# ════════════════════════════════════════════════════════════
+
+## 基础信息
+- name:               物品名称（唯一标识）
+- type:               物品类型（见取值表）
+- rarity:             稀有度（见取值表）
+- description:        物品描述（一句话）
+
+## 来源与归属
+- origin:             物品来历（打捞/购买/赠予/制作）
+- owner:              物品归属（属于谁）
+- current_holder:     当前持有者（可能与owner不同）
+
+## 使用规则
+- constraints:        使用限制/禁忌
+- durability:         耐久度（可选，需要追踪耐久的物品填）
+- enhancement:        强化等级（可选，有强化系统的物品填）
+
+## 状态追踪
+- is_destroyed:       是否已损坏/销毁
+- acquisition_chapter: 获取章节
+- destruction_chapter: 失去/销毁章节
+- status:             当前状态（intact/damaged/broken/lost/consumed/transferred）
+
+## 外观描述
+- appearance_description: 具体外观描写（每章可不同）
+
+
+# ════════════════════════════════════════════════════════════
+#  四、示例
+# ════════════════════════════════════════════════════════════
+
+# ── 示例1：主角的标志性物件 ──
+
+- name: 招牌
+  type: key_item
+  rarity: legend
+  description: "疯狂水世界"的招牌，沈浮抱着它漂了一夜
+  origin: 洪水之夜从乐园拆下
+  owner: 沈浮
+  current_holder: 沈浮
+  constraints:
+    - "夹层有爷爷的照片（fs002）"
+    - "招牌在人在，招牌丢人亡"
+  acquisition_chapter: ch001
+  status: intact
+  appearance_description: "木制招牌，边角泡水发胀，字迹模糊但能辨认"
+
+- name: 检票钳
+  type: tool
+  rarity: uncommon
+  description: 沈浮的检票工具，也是他的"世界观"
+  origin: 乐园开业时领取
+  owner: 沈浮
+  current_holder: 沈浮
+  constraints:
+    - "检票闸机、票价、营业时间是他的世界观"
+  acquisition_chapter: ch001
+  status: intact
+
+# ── 示例2：英灵装备 ──
+
+- name: 救生哨
+  type: accessory
+  rarity: rare
+  description: 三姆的标志性物品，吹响可召唤队友
+  origin: 乐园英灵殿配发
+  owner: 大嘴三姆
+  current_holder: 大嘴三姆
+  constraints:
+    - "只能在乐园范围内使用"
+  acquisition_chapter: ch008
+  status: intact
+
+- name: 工牌001
+  type: key_item
+  rarity: uncommon
+  description: 三姆的员工工牌，编号001
+  origin: 乐园入职时发放
+  owner: 大嘴三姆
+  current_holder: 大嘴三姆
+  constraints:
+    - "工牌在人在，工牌丢人离"
+  acquisition_chapter: ch008
+  status: intact
+
+# ── 示例3：消耗品 ──
+
+- name: 甘霖
+  type: consumable
+  rarity: rare
+  description: 英灵的薪资，可恢复状态
+  origin: 信仰值转化
+  owner: 乐园
+  current_holder: 英灵殿
+  constraints:
+    - "每月发放一次"
+    - "不可囤积超过3个月"
+  status: intact
+
+# ── 示例4：五钥 ──
+
+- name: 甘霖瓶
+  type: key_item
+  rarity: mythic
+  description: 第一钥，掌控甘霖之力
+  origin: 卷一隐性获取
+  owner: 沈浮
+  current_holder: 沈浮
+  constraints:
+    - "五钥之一，集齐可启动方舟全功率"
+  acquisition_chapter: ch001
+  status: intact
+
+- name: 潮汐之心
+  type: key_item
+  rarity: mythic
+  description: 第二钥，掌控潮汐之力
+  origin: 卷三获取
+  owner: 沈浮
+  current_holder: 沈浮
+  constraints:
+    - "五钥之一，集齐可启动方舟全功率"
+  acquisition_chapter: ch241
+  status: intact
+
+# ── 示例5：已损坏物品 ──
+
+- name: 仙城守城令
+  type: key_item
+  rarity: epic
+  description: 仙城守军的信物，姜横持有
+  origin: 仙城守军传承
+  owner: 姜横
+  current_holder: 纪念墙
+  constraints:
+    - "背面三条批注墨迹存了三千年"
+  acquisition_chapter: ch001
+  destruction_chapter: ch950
+  status: intact
+  notes: "终局入纪念墙，不再使用"
+
+
+# ════════════════════════════════════════════════════════════
+#  五、与角色档案的绑定
+# ════════════════════════════════════════════════════════════
+
+角色档案中的物品字段与物品格式规范的对应关系：
+
+角色档案字段              物品格式规范
+─────────────────────────────────────
+signature_items     →    name + type + rarity
+equipment.*         →    name + type + constraints
+inventory.fixed     →    name + type + constraints
+inventory.consumable →   name + type + durability
+inventory.key_items →    name + type + acquisition_chapter
+
+## 绑定示例
+
+# 角色档案
+- name: 沈浮
+  signature_items: ["招牌", "检票钳", "爷爷的照片"]
+  equipment:
+    主手: 无（不参与战斗）
+    副手: 检票钳
+    防具: 无
+    饰品: 无
+    特殊: 乐园设施权限
+  inventory:
+    固定物品: ["招牌", "检票钳", "爷爷的照片"]
+    消耗品: 无
+    关键物品: ["甘霖瓶", "潮汐之心"]
+
+# 对应的物品档案
+- name: 招牌
+  type: key_item
+  rarity: legend
+  ...
+
+- name: 检票钳
+  type: tool
+  rarity: uncommon
+  ...
+
+- name: 甘霖瓶
+  type: key_item
+  rarity: mythic
+  ...
