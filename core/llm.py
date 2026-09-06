@@ -1,7 +1,8 @@
 """
-LLM管理模块
+LLM管理模块 v2.0
 
-负责GLM API的调用和管理
+负责LLM API的调用和管理
+支持硅基流动等OpenAI兼容API
 """
 
 import os
@@ -16,20 +17,20 @@ class LLMManager:
         self.config = config
         self.llm_config = config['llm']
         
-        # 初始化GLM客户端
+        # 初始化客户端
         self.writer_client = self._create_client('writer')
         self.archivist_client = self._create_client('archivist')
         self.reviewer_client = self._create_client('reviewer')
     
     def _create_client(self, role: str) -> OpenAI:
-        """创建GLM客户端"""
+        """创建LLM客户端（支持硅基流动等OpenAI兼容API）"""
         role_config = self.llm_config.get(role, {})
         
-        api_key = role_config.get('api_key', os.getenv('GLM_API_KEY'))
-        api_base = role_config.get('api_base', 'https://open.bigmodel.cn/api/paas/v4')
+        api_key = role_config.get('api_key', os.getenv('LLM_API_KEY'))
+        api_base = role_config.get('api_base', 'https://api.siliconflow.cn/v1')
         
         if not api_key:
-            raise ValueError(f"未找到{role}角色的API密钥")
+            raise ValueError(f"未找到{role}角色的API密钥，请在config.yaml中配置")
         
         return OpenAI(
             api_key=api_key,
