@@ -70,7 +70,8 @@ context:
     current_outline: 5     # 本章大纲
     foreshadowing: 3       # 伏笔信息
     transition: 3          # 章节衔接提示
-    output_reserve: 33     # 输出预留（生成章节的空间）
+    constraints: 3         # 三级约束体系（已写定/大纲/细纲）
+    output_reserve: 30     # 输出预留（生成章节的空间）
 
   # 前文读取策略（核心配置）
   previous_chapters:

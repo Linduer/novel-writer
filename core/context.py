@@ -16,6 +16,7 @@ from datetime import datetime
 
 from .foreshadowing import ForeshadowingManager
 from .chapter_connection import ChapterConnectionManager
+from .constraints import ConstraintManager, Tier
 
 
 def estimate_tokens(text: str) -> int:
@@ -64,6 +65,7 @@ class ContextEngine:
         # 初始化管理器
         self.foreshadowing_manager = ForeshadowingManager(config, project_name)
         self.connection_manager = ChapterConnectionManager(config, project_name)
+        self.constraint_manager = ConstraintManager(config, project_name)
         
         # Token使用跟踪
         self.token_usage = {}
@@ -147,6 +149,17 @@ class ContextEngine:
         context['transition_text'] = transition_text
         context['transition_tokens'] = estimate_tokens(transition_text)
         
+        # 2.10 三级约束体系（已写定 > 大纲 > 细纲）
+        constraints_text = self.constraint_manager.format_for_prompt(
+            max_tokens_per_tier={
+                Tier.IMMUTABLE: int(budget['constraints'] * 0.5),   # 50%给Tier1
+                Tier.OUTLINE:   int(budget['constraints'] * 0.3),   # 30%给Tier2
+                Tier.CHAPTER:   int(budget['constraints'] * 0.2),   # 20%给Tier3
+            }
+        )
+        context['constraints_text'] = constraints_text
+        context['constraints_tokens'] = estimate_tokens(constraints_text)
+        
         # === 第三步：计算总Token使用量 ===
         total_used = sum([
             context['system_rules_tokens'],
@@ -158,6 +171,7 @@ class ContextEngine:
             context['facts_tokens'],
             context['foreshadowing_tokens'],
             context['transition_tokens'],
+            context['constraints_tokens'],
         ])
         
         context['total_input_tokens'] = total_used
@@ -529,6 +543,11 @@ class ContextEngine:
         if foreshadowing_text:
             formatted_parts.append(f"## 伏笔信息\n{foreshadowing_text}")
         
+        # 三级约束体系（放在最后，强调优先级）
+        constraints_text = context.get('constraints_text', '')
+        if constraints_text:
+            formatted_parts.append(f"## 写作约束（必须遵守，高档优先）\n{constraints_text}")
+        
         return "\n\n".join(formatted_parts)
     
     def get_token_usage_report(self, context: Dict) -> str:
@@ -548,6 +567,7 @@ class ContextEngine:
             f"- 动态事实：{context.get('facts_tokens', 0):,} / {context['token_budget'].get('facts', 0):,}",
             f"- 伏笔信息：{context.get('foreshadowing_tokens', 0):,} / {context['token_budget'].get('foreshadowing', 0):,}",
             f"- 衔接提示：{context.get('transition_tokens', 0):,} / {context['token_budget'].get('transition', 0):,}",
+            f"- 三级约束：{context.get('constraints_tokens', 0):,} / {context['token_budget'].get('constraints', 0):,}",
             "",
             "## 总计",
             f"- 输入Token总计：{context.get('total_input_tokens', 0):,}",

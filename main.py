@@ -25,6 +25,7 @@ from core.llm import LLMManager
 from core.checker import ConsistencyChecker
 from core.foreshadowing import ForeshadowingManager
 from core.chapter_connection import ChapterConnectionManager
+from core.constraints import ConstraintManager, Tier
 
 console = Console()
 
@@ -50,6 +51,7 @@ def _init_managers(config):
         'checker':   ConsistencyChecker(config, pname),
         'foreshadow': ForeshadowingManager(config, pname),
         'connection': ChapterConnectionManager(config, pname),
+        'constraints': ConstraintManager(config, pname),
         'project_name': pname,
     }
 
@@ -191,6 +193,10 @@ def write(chapter, volume, name):
             matched = m['foreshadow'].find_foreshadowing_by_hint(pname, hint_text)
             if matched:
                 m['foreshadow'].resolve_foreshadowing(pname, matched.id, f"ch{chapter:04d}")
+
+    # 同步Tier1约束（从已写定内容提取）
+    console.print("[cyan]同步约束...[/cyan]")
+    m['constraints'].sync_from_written_chapters(m['storage'])
 
     # 更新项目统计
     m['storage'].update_project_stats(pname)
@@ -365,6 +371,11 @@ def save(chapter, yes):
             matched = m['foreshadow'].find_foreshadowing_by_hint(pname, hint_text)
             if matched:
                 m['foreshadow'].resolve_foreshadowing(pname, matched.id, f"ch{chapter:04d}")
+
+    # 同步Tier1约束 + 归档Tier3细纲
+    m['constraints'].sync_from_written_chapters(m['storage'])
+    m['constraints'].archive_chapter_constraints(chapter)
+    console.print("[green]✓[/green] 约束已同步（Tier1已写定 + Tier3已归档）")
 
     m['storage'].update_project_stats(pname)
 
@@ -715,6 +726,118 @@ def import_data():
         return
     console.print(f"\n[bold]将导入 {len(imported)} 个文件[/bold]")
     console.print("[yellow]导入功能需要进一步实现[/yellow]")
+
+
+# ═══════════════════════════════════════════════════════════════
+#  constraints — 查看/管理约束
+# ═══════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.option('--tier', type=click.Choice(['1', '2', '3', 'all']), default='all',
+              help='查看指定等级（1=已写定, 2=大纲, 3=细纲）')
+def constraints(tier):
+    """查看三级约束体系"""
+    console.print(Panel("[bold magenta]三级约束体系[/bold magenta]"))
+    config = load_config()
+    m = _init_managers(config)
+
+    tier_map = {'1': Tier.IMMUTABLE, '2': Tier.OUTLINE, '3': Tier.CHAPTER}
+    tier_labels = {Tier.IMMUTABLE: "第一档·已写定（绝对不可违背）",
+                   Tier.OUTLINE:   "第二档·大纲（原则上不可违背）",
+                   Tier.CHAPTER:   "第三档·细纲（可适度偏离）"}
+
+    if tier == 'all':
+        tiers_to_show = [Tier.IMMUTABLE, Tier.OUTLINE, Tier.CHAPTER]
+    else:
+        tiers_to_show = [tier_map[tier]]
+
+    for t in tiers_to_show:
+        items = m['constraints'].get_tier(t)
+        table = Table(title=tier_labels[t])
+        table.add_column("ID", style="cyan", width=16)
+        table.add_column("分类", style="white", width=12)
+        table.add_column("约束内容", style="white")
+        table.add_column("来源", style="dim", width=10)
+        for c in items:
+            table.add_row(c.id, c.category, c.content[:80], c.source)
+        console.print(table)
+
+    stats = m['constraints'].get_stats()
+    console.print(f"\n[dim]Tier1: {stats.get('tier1',0)}条 | "
+                  f"Tier2: {stats.get('tier2',0)}条 | "
+                  f"Tier3: {stats.get('tier3',0)}条 | "
+                  f"归档: {stats.get('archive',0)}章[/dim]")
+
+
+@cli.command('constraints-sync')
+@click.option('--source', type=click.Choice(['outline', 'chapters', 'both']),
+              default='both', help='同步来源')
+def constraints_sync(source):
+    """手动同步约束（从大纲和已写章节提取）"""
+    console.print(Panel("[bold cyan]同步约束[/bold cyan]"))
+    config = load_config()
+    m = _init_managers(config)
+    pname = m['project_name']
+
+    if source in ('chapters', 'both'):
+        console.print("[cyan]从已写章节同步Tier1...[/cyan]")
+        m['constraints'].sync_from_written_chapters(m['storage'])
+        console.print("[green]✓[/green] Tier1已同步")
+
+    if source in ('outline', 'both'):
+        console.print("[cyan]从大纲同步Tier2...[/cyan]")
+        project_data = m['storage'].load_project(pname)
+        for outline in project_data.get('outline', []):
+            m['constraints'].sync_from_outline(outline['content'], source=outline['filename'])
+        console.print("[green]✓[/green] Tier2已同步")
+
+    stats = m['constraints'].get_stats()
+    console.print(f"\n当前约束：Tier1={stats.get('tier1',0)} | "
+                  f"Tier2={stats.get('tier2',0)} | "
+                  f"Tier3={stats.get('tier3',0)}")
+
+
+@cli.command('constraints-add')
+@click.option('--tier', type=click.Choice(['1', '2', '3']), required=True,
+              help='约束等级')
+@click.option('--category', required=True,
+              help='分类（character/relationship/event/plot/foreshadowing/world/style）')
+@click.option('--content', required=True, help='约束内容')
+def constraints_add(tier, category, content):
+    """手动添加约束"""
+    config = load_config()
+    m = _init_managers(config)
+    tier_map = {'1': Tier.IMMUTABLE, '2': Tier.OUTLINE, '3': Tier.CHAPTER}
+    c = m['constraints'].add(tier_map[tier], category, content, source="manual", locked=True)
+    console.print(f"[green]✓[/green] 已添加约束：{c.id} [{c.category}] {c.content[:50]}...")
+
+
+@cli.command('constraints-check')
+@click.option('--chapter', type=int, required=True, help='章节编号')
+def constraints_check(chapter):
+    """检查某章内容是否违反约束"""
+    console.print(Panel(f"[bold yellow]约束检查：第{chapter}章[/bold yellow]"))
+    config = load_config()
+    m = _init_managers(config)
+
+    content = m['storage'].load_chapter(chapter)
+    if not content:
+        console.print(f"[red]错误：未找到第{chapter}章内容[/red]")
+    else:
+        # 将内容注入LLM进行约束检查
+        from core.constraints import Constraint
+        test = Constraint(id="test", tier=3, category="test", content=content[:200])
+        conflict = m['constraints'].check_conflict(test)
+        if conflict:
+            console.print(m['constraints'].format_conflict_error(test, conflict))
+        else:
+            console.print("[green]✓ 未检测到与已写定约束的冲突[/green]")
+
+    # 显示当前约束统计
+    stats = m['constraints'].get_stats()
+    console.print(f"\n[dim]当前约束：Tier1={stats.get('tier1',0)} | "
+                  f"Tier2={stats.get('tier2',0)} | "
+                  f"Tier3={stats.get('tier3',0)}[/dim]")
 
 
 if __name__ == '__main__':
