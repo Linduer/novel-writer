@@ -211,7 +211,7 @@
 
 - id: fs015
   description: "老潜水员规矩：见墨回头。"
-  introduced_in: 卷一闲笔
+  introduced_in: ch0050
   related_characters: ["沈浮", "温大夫", "韩嫂"]
   type: rule
   importance: C

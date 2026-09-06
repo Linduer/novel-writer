@@ -125,13 +125,13 @@ ending: "搁浅开业，免票，新大陆"
 volumes:
   - volume_number: 1
     volume_title: "开业洪水"
-    chapter_range: "ch001-096"
+    chapter_range: "ch0001-ch0096"
     core_conflict: "乐园刚开业就被洪水毁了，沈浮要重建"
     core_goal: "在末日里重新开业"
     key_events:
-      - "ch001: 洪水来袭，乐园被毁"
-      - "ch008: 打捞大嘴三姆"
-      - "ch095: 满潮夜，造浪池首秀"
+      - "ch0001: 洪水来袭，乐园被毁"
+      - "ch0008: 打捞大嘴三姆"
+      - "ch0095: 满潮夜，造浪池首秀"
     new_characters: ["大嘴三姆", "彪哥", "白经理"]
     new_locations: ["近海废墟", "疯狂水世界原址"]
     foreshadows:
@@ -143,13 +143,13 @@ volumes:
 
   - volume_number: 2
     volume_title: "义盟风云"
-    chapter_range: "ch097-192"
+    chapter_range: "ch0097-ch0192"
     core_conflict: "义盟要查封乐园，程霜倒戈"
     core_goal: "获得义盟认可，通商"
     key_events:
-      - "ch097: 程霜首次出场"
-      - "ch130: 程霜倒戈"
-      - "ch179: 三姆三星觉醒"
+      - "ch0097: 程霜首次出场"
+      - "ch0130: 程霜倒戈"
+      - "ch0179: 三姆三星觉醒"
     new_characters: ["程霜", "万舟", "卫崇仓"]
     new_locations: ["千帆海域", "义盟首府"]
     foreshadows:
