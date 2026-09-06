@@ -259,3 +259,37 @@ python main.py aliases                           # 查看所有角色别名
 python main.py aliases --character 沈浮           # 查看特定角色别名
 python main.py aliases --check ch0402             # 检查第402章别名使用是否正确
 python main.py aliases --diff ch001 ch839         # 对比两个章节的称呼变化
+
+
+# ════════════════════════════════════════════════════════════
+#  七、与说话风格的关联
+# ════════════════════════════════════════════════════════════
+
+别名系统与说话风格有重叠字段，需要保持一致：
+
+别名系统字段              说话风格字段              关系
+─────────────────────────────────────────────────
+self_call（自称）     →   catchphrases（口头禅）   自称是口头禅的一部分
+self_call（自称）     →   dialogue_style（风格）   自称反映说话风格
+forbidden_calls       →   forbidden_patterns      禁用称呼=禁用模式
+
+## 一致性规则
+
+1. self_call 中的自称必须在 catchphrases 中出现（或在 dialogue_style 中说明）
+2. 两个规范中的自称必须完全一致（不能别名说"本座"，说话风格说"我"）
+3. forbidden_calls 中的禁用称呼必须在 forbidden_patterns 中说明原因
+
+## 示例
+
+# 别名系统
+- character: 敖涸
+  self_call: 本座
+  forbidden_calls: [名字, 小子]
+
+# 说话风格（必须一致）
+- character: 敖涸
+  catchphrases: ["本座说过的话，不说第二遍。", ...]
+  forbidden_patterns: [
+    {pattern: "谦虚/客气", reason: "本座不用谦辞"},
+    {pattern: "自称'我'", reason: "本座只用'本座'"}
+  ]

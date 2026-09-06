@@ -221,6 +221,22 @@
 4. 地点档案
    - 时间线的 location → 地点的 key_events
 
-5. 上下文引擎
+5. 场景切片
+   - 时间线的 chapter → 场景切片的 chapter
+   - 时间线的 event → 场景切片的 event
+
+6. 细纲
+   - 时间线的 chapter → 细纲的 chapter
+   - 时间线的 event → 细纲的核心事件
+
+7. 大纲
+   - 时间线的 chapter_range → 大纲的 chapter_range
+   - 时间线的 key_events → 大纲的 key_events
+
+8. 爽点审查
+   - 时间线的 event → 爽点审查的记录
+   - 时间线的分布 → 爽点审查的节奏分析
+
+9. 上下文引擎
    - 当前章节的时间线信息 → 注入prompt
    - 帮助LLM理解时间顺序

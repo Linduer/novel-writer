@@ -151,3 +151,41 @@ python main.py abilities --character 沈浮   # 查看特定角色能力状态
 python main.py abilities --log             # 查看能力变化日志
 python main.py abilities --log --chapter ch0402  # 查看特定章节的能力变化
 python main.py abilities --diff ch001 ch402 # 对比两个章节的能力差异
+
+
+# ════════════════════════════════════════════════════════════
+#  八、与其他系统的关联
+# ════════════════════════════════════════════════════════════
+
+1. 能力体系格式规范
+   - abilities.json.current_realm → 能力体系.境界等级
+   - abilities.json.talents → 能力体系.天赋类型
+   - abilities.json.unlocked_facilities → 能力体系.设施解锁
+
+2. 角色档案
+   - abilities.json → 角色档案.abilities（静态能力）
+   - abilities.json → 角色档案.growth_arc（动态变化）
+
+3. 物品格式规范
+   - abilities.json.equipped_items → 物品格式规范（装备绑定）
+   - 物品获取/丢失 → 必须更新 abilities.json
+
+4. 说话风格
+   - abilities.json.current_realm → 可能影响说话风格（如三姆觉醒后）
+   - 说话风格.growth_notes → 可能引用能力变化
+
+5. 别名系统
+   - abilities.json.current_realm → 可能影响别名（如觉醒后称号变化）
+   - 别名系统的时间维度记录 → 可能引用能力变化
+
+6. 场景切片
+   - abilities.json → 场景切片的战斗场景（角色当前能力）
+   - 场景切片的事件 → 可能触发 abilities.json 的更新
+
+7. 细纲
+   - 细纲.character_changes.type=realm → 更新 abilities.json.current_realm
+   - 细纲.character_changes.type=ability → 更新 abilities.json.talents
+
+8. 上下文引擎
+   - abilities.json → 注入prompt（当前角色能力状态）
+   - 帮助LLM理解角色当前实力

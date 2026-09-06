@@ -136,7 +136,11 @@
 | 收获   | 获得新能力/物品/伙伴 |
 | 守护   | 保护重要的人 |
 | 牺牲   | 为他人付出 |
+| 团聚   | 分离后重逢 |
 | 揭秘   | 真相大白 |
+| 报仇   | 复仇成功 |
+| 成就   | 达成重要目标 |
+| 认可   | 被重要人物认可 |
 
 ## character_changes.type（变化类型）
 
@@ -397,6 +401,26 @@ reference_chapters: ["ch554", "ch707", "ch839"]
    - 细纲的 satisfaction_points → 爽点审查的记录
    - 细纲的 emotion_curve → 爽点审查的节奏分布
 
-6. 上下文引擎
-   - 细纲的当前章信息 → 注入prompt
-   - 帮助LLM理解这一章该写什么
+6. 别名系统
+   - 细纲的 characters → 别名系统（生成时注入当前章节的称呼信息）
+   - 细纲生成对话时必须参考别名系统的 self_call 和 forbidden_calls
+
+7. 说话风格
+   - 细纲生成对话时必须参考说话风格的 signature_style 和 forbidden_patterns
+   - 细纲的 character_changes.type=personality → 可能影响说话风格
+
+8. 能力体系
+   - 细纲的 character_changes.type=realm → 能力体系.境界突破
+   - 细纲的 character_changes.type=ability → 能力体系.天赋/设施解锁
+
+9. 物品格式规范
+   - 细纲生成时如果涉及物品获取/使用 → 必须参考物品格式规范
+   - 细纲的 character_changes.type=item → 物品格式规范的状态更新
+
+10. 时间线
+    - 细纲的 chapter → 时间线的时间点
+    - 细纲的核心事件 → 时间线的记录
+
+11. 上下文引擎
+    - 细纲的当前章信息 → 注入prompt
+    - 帮助LLM理解这一章该写什么

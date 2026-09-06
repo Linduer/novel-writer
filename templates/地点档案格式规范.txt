@@ -290,6 +290,26 @@
    - 地点的 key_events → 时间线的事件节点
    - 地点的 first_appearance → 时间线的地点引入
 
-5. 上下文引擎
-   - 当前章节出场地点 → 注入prompt
-   - 地点的 atmosphere → 帮助LLM营造氛围
+5. 场景切片
+   - 地点的 name → 场景切片的 location
+   - 地点的 atmosphere → 场景切片的 atmosphere
+
+6. 别名系统
+   - 地点的别名 → 别名系统（地点也有别名，如"沧浪池"也叫"泳池"）
+   - 地点名称的变化 → 别名系统的时间维度记录
+
+7. 势力组织
+   - 地点的 owner → 势力组织的 territory
+   - 地点的 key_events → 势力组织的关键事件
+
+8. 爽点审查
+   - 地点的 key_events → 爽点审查的记录
+   - 地点的 atmosphere → 爽点审查的节奏分布
+
+9. 大纲
+   - 地点的 first_appearance → 大纲的 new_locations
+   - 地点的 key_events → 大纲的 key_events
+
+10. 上下文引擎
+    - 当前章节出场地点 → 注入prompt
+    - 地点的 atmosphere → 帮助LLM营造氛围

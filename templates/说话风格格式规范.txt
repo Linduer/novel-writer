@@ -419,3 +419,37 @@ example_lines:
 tempo: 顿挫有致（捧哏节奏）
 register: 正式（演出腔）/ 随意（捧哏）
 tone: 豁达+悲伤（藏在包袱里）
+
+
+# ════════════════════════════════════════════════════════════
+#  十三、与其他系统的关联
+# ════════════════════════════════════════════════════════════
+
+1. 角色档案
+   - 说话风格.name → 角色档案.name（唯一标识）
+   - 说话风格.signature_style → 角色档案.speaking_style 核心
+   - 说话风格.growth_notes → 角色档案.growth_arc
+
+2. 别名系统
+   - 说话风格.catchphrases → 别名系统.self_call（自称必须一致）
+   - 说话风格.forbidden_patterns → 别名系统.forbidden_calls（禁用称呼=禁用模式）
+   - 两个规范的自称必须完全一致
+
+3. 场景切片
+   - 说话风格 → 场景切片.dialogue_style（注入prompt）
+   - 说话风格.forbidden_patterns → 帮助LLM生成符合人设的对话
+
+4. 细纲
+   - 说话风格 → 细纲生成时的角色对话约束
+   - 细纲.character_changes.type=personality → 可能影响说话风格
+
+5. 上下文引擎
+   - 说话风格 → 注入prompt（~50 tokens/角色）
+   - 帮助LLM生成符合人设的对话
+
+## Token预算分配
+
+说话风格占Token预算的3%（约3840 tokens for 128K context）：
+
+  当前章节出场角色的说话风格：~3000 tokens
+  说话风格规则：~840 tokens
