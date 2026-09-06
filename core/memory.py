@@ -1,239 +1,350 @@
 """
 记忆系统模块
 
-负责管理小说的记忆系统，包括事实表、向量数据库和摘要
+每章独立记忆 + 全局聚合记忆
+结构：
+  chapters/ch{NNNN}/memory.json   ← 本章提取的记忆
+  memory/
+    timeline.jsonl       ← 全局时间线（append）
+    event_log.jsonl      ← 全局事件流水（append）
+    character_graph.json ← 角色关系图（整体更新）
+    facts.jsonl          ← 动态事实表（append）
+    summaries/
+      ch{NNNN}.txt       ← 章节摘要（供滑动窗口读取）
 """
 
 import json
-import os
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from datetime import datetime
+
 
 class MemoryManager:
     """记忆管理器"""
-    
+
     def __init__(self, config: Dict, project_name: str = ""):
         self.config = config
         data_dir = config['storage']['data_dir']
         if project_name:
             data_dir = data_dir.replace('{project}', project_name)
         self.base_path = Path(data_dir)
-    
-    def update_facts(self, project_name: str, chapter: int, facts: List[Dict]):
-        """更新事实表"""
-        project_dir = self.base_path
-        facts_dir = project_dir / 'memory' / 'facts'
-        facts_dir.mkdir(parents=True, exist_ok=True)
-        
-        facts_file = facts_dir / 'facts.jsonl'
-        
-        # 读取现有事实
-        existing_facts = []
-        if facts_file.exists():
-            with open(facts_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    if line.strip():
-                        existing_facts.append(json.loads(line))
-        
-        # 添加新事实
-        for fact in facts:
-            fact_entry = {
-                'chapter': chapter,
-                'timestamp': datetime.now().isoformat(),
-                'content': fact.get('content', ''),
-                'type': fact.get('type', 'general'),
-                'entities': fact.get('entities', []),
-                'importance': fact.get('importance', 'medium')
-            }
-            existing_facts.append(fact_entry)
-        
-        # 保存更新后的事实
-        with open(facts_file, 'w', encoding='utf-8') as f:
-            for fact in existing_facts:
-                f.write(json.dumps(fact, ensure_ascii=False) + '\n')
-    
-    def get_facts(self, project_name: str, chapter_range: Optional[List[int]] = None) -> List[Dict]:
-        """获取事实表"""
-        project_dir = self.base_path
-        facts_file = project_dir / 'memory' / 'facts' / 'facts.jsonl'
-        
-        if not facts_file.exists():
-            return []
-        
-        facts = []
-        with open(facts_file, 'r', encoding='utf-8') as f:
-            for line in f:
-                if line.strip():
-                    fact = json.loads(line)
-                    if chapter_range:
-                        if fact.get('chapter') in chapter_range:
-                            facts.append(fact)
-                    else:
-                        facts.append(fact)
-        
-        return facts
-    
-    def update_summaries(self, project_name: str, chapter: int, summary: str, summary_type: str = 'chapter'):
-        """更新摘要"""
-        project_dir = self.base_path
-        summaries_dir = project_dir / 'memory' / 'summaries'
-        summaries_dir.mkdir(parents=True, exist_ok=True)
-        
-        if summary_type == 'chapter':
-            filename = f"chapter_{chapter:04d}_summary.txt"
-        elif summary_type == 'volume':
-            filename = f"volume_{chapter:04d}_summary.txt"
-        else:
-            filename = f"{summary_type}_{chapter:04d}_summary.txt"
-        
-        summary_file = summaries_dir / filename
-        
-        with open(summary_file, 'w', encoding='utf-8') as f:
-            f.write(summary)
-    
-    def get_summaries(self, project_name: str, chapter_range: Optional[List[int]] = None, 
-                     summary_type: str = 'chapter') -> List[Dict]:
-        """获取摘要"""
-        project_dir = self.base_path
-        summaries_dir = project_dir / 'memory' / 'summaries'
-        
+        self.memory_dir = self.base_path / 'memory'
+
+    # ── 全局文件路径 ──────────────────────────────────────────
+
+    def _timeline_path(self) -> Path:
+        return self.memory_dir / 'timeline.jsonl'
+
+    def _event_log_path(self) -> Path:
+        return self.memory_dir / 'event_log.jsonl'
+
+    def _character_graph_path(self) -> Path:
+        return self.memory_dir / 'character_graph.json'
+
+    def _facts_path(self) -> Path:
+        return self.memory_dir / 'facts' / 'facts.jsonl'
+
+    def _summary_path(self, chapter: int) -> Path:
+        return self.memory_dir / 'summaries' / f"ch{chapter:04d}.txt"
+
+    # ── 本章记忆（保存在 chapters/ch{NNNN}/memory.json）───────
+
+    def save_chapter_memory(self, chapter: int, memory_data: Dict):
+        """保存本章提取的记忆（由LLM提取后调用）"""
+        chapters_dir = self.base_path / 'chapters'
+        for d in chapters_dir.iterdir():
+            if d.is_dir() and d.name.startswith(f"ch{chapter:04d}"):
+                mem_file = d / 'memory.json'
+                mem_file.write_text(
+                    json.dumps(memory_data, ensure_ascii=False, indent=2),
+                    encoding='utf-8'
+                )
+                return
+
+    def load_chapter_memory(self, chapter: int) -> Dict:
+        """读取本章记忆"""
+        chapters_dir = self.base_path / 'chapters'
+        if not chapters_dir.exists():
+            return {}
+        for d in chapters_dir.iterdir():
+            if d.is_dir() and d.name.startswith(f"ch{chapter:04d}"):
+                mem_file = d / 'memory.json'
+                if mem_file.exists():
+                    return json.loads(mem_file.read_text(encoding='utf-8'))
+        return {}
+
+    # ── 摘要 ─────────────────────────────────────────────────
+
+    def save_summary(self, chapter: int, summary: str):
+        """保存章节摘要（供上下文引擎的滑动窗口读取）"""
+        self.memory_dir.mkdir(parents=True, exist_ok=True)
+        (self.memory_dir / 'summaries').mkdir(exist_ok=True)
+        self._summary_path(chapter).write_text(summary, encoding='utf-8')
+
+    def get_summaries(self, chapters: List[int] = None) -> List[Dict]:
+        """批量获取章节摘要，按章节号排序"""
+        summaries_dir = self.memory_dir / 'summaries'
         if not summaries_dir.exists():
             return []
-        
-        summaries = []
-        for file in summaries_dir.glob(f"*_{summary_type}_*.txt"):
-            # 从文件名提取章节号
-            parts = file.stem.split('_')
-            if len(parts) >= 2:
-                try:
-                    chapter_num = int(parts[1])
-                    if chapter_range and chapter_num not in chapter_range:
-                        continue
-                    
-                    with open(file, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                    
-                    summaries.append({
-                        'chapter': chapter_num,
-                        'type': summary_type,
-                        'content': content
-                    })
-                except ValueError:
-                    continue
-        
-        return summaries
-    
-    def search(self, project_name: str, query: str, query_type: str = 'plot') -> List[Dict]:
-        """搜索记忆"""
-        # 这里可以实现更复杂的搜索逻辑
-        # 目前简化为关键词搜索
-        
+
+        result = []
+        for f in summaries_dir.glob('ch*.txt'):
+            try:
+                ch_num = int(f.stem[2:])
+            except ValueError:
+                continue
+            if chapters and ch_num not in chapters:
+                continue
+            result.append({
+                'chapter': ch_num,
+                'content': f.read_text(encoding='utf-8')
+            })
+        result.sort(key=lambda x: x['chapter'])
+        return result
+
+    def get_summary(self, chapter: int) -> Optional[str]:
+        """获取单章摘要"""
+        p = self._summary_path(chapter)
+        return p.read_text(encoding='utf-8') if p.exists() else None
+
+    # ── 事件流水 ──────────────────────────────────────────────
+
+    def append_events(self, chapter: int, events: List[Dict]):
+        """追加事件到全局事件流水"""
+        self.memory_dir.mkdir(parents=True, exist_ok=True)
+        with open(self._event_log_path(), 'a', encoding='utf-8') as f:
+            for ev in events:
+                entry = {
+                    'chapter': chapter,
+                    'timestamp': datetime.now().isoformat(),
+                    **ev
+                }
+                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+
+    def get_events(self, chapter_range: List[int] = None) -> List[Dict]:
+        """读取事件流水"""
+        path = self._event_log_path()
+        if not path.exists():
+            return []
+        events = []
+        for line in path.read_text(encoding='utf-8').splitlines():
+            if not line.strip():
+                continue
+            ev = json.loads(line)
+            if chapter_range and ev.get('chapter') not in chapter_range:
+                continue
+            events.append(ev)
+        return events
+
+    # ── 时间线 ───────────────────────────────────────────────
+
+    def append_timeline(self, chapter: int, entries: List[Dict]):
+        """追加时间线条目"""
+        self.memory_dir.mkdir(parents=True, exist_ok=True)
+        with open(self._timeline_path(), 'a', encoding='utf-8') as f:
+            for entry in entries:
+                row = {
+                    'chapter': chapter,
+                    'timestamp': datetime.now().isoformat(),
+                    **entry
+                }
+                f.write(json.dumps(row, ensure_ascii=False) + '\n')
+
+    def get_timeline(self, chapter_range: List[int] = None) -> List[Dict]:
+        """读取时间线"""
+        path = self._timeline_path()
+        if not path.exists():
+            return []
+        entries = []
+        for line in path.read_text(encoding='utf-8').splitlines():
+            if not line.strip():
+                continue
+            entry = json.loads(line)
+            if chapter_range and entry.get('chapter') not in chapter_range:
+                continue
+            entries.append(entry)
+        return entries
+
+    # ── 角色关系图 ──────────────────────────────────────────
+
+    def update_character_graph(self, chapter: int, 
+                               characters_involved: List[str],
+                               relationship_changes: List[Dict]):
+        """
+        更新角色关系图
+        relationship_changes 格式：
+          [{"from": "林远", "to": "系统", "relation": "拥有", "detail": "..."}]
+        """
+        self.memory_dir.mkdir(parents=True, exist_ok=True)
+        graph = self._load_character_graph()
+
+        # 更新角色出场记录
+        for name in characters_involved:
+            if name not in graph.get('characters', {}):
+                graph.setdefault('characters', {})[name] = {
+                    'first_appearance': chapter,
+                    'last_appearance': chapter,
+                    'appearances': [chapter]
+                }
+            else:
+                ch = graph['characters'][name]
+                ch['last_appearance'] = chapter
+                if chapter not in ch.get('appearances', []):
+                    ch.setdefault('appearances', []).append(chapter)
+
+        # 更新关系边
+        for change in relationship_changes:
+            key = f"{change['from']}→{change['to']}"
+            reverse_key = f"{change['to']}→{change['from']}"
+            edges = graph.setdefault('relationships', {})
+
+            if key in edges:
+                edges[key]['detail'] = change.get('detail', edges[key]['detail'])
+                edges[key]['last_seen'] = chapter
+            elif reverse_key in edges:
+                edges[reverse_key]['detail'] = change.get('detail', edges[reverse_key]['detail'])
+                edges[reverse_key]['last_seen'] = chapter
+            else:
+                edges[key] = {
+                    'from': change['from'],
+                    'to': change['to'],
+                    'relation': change.get('relation', ''),
+                    'detail': change.get('detail', ''),
+                    'first_seen': chapter,
+                    'last_seen': chapter
+                }
+
+        graph['updated_at'] = datetime.now().isoformat()
+        self._character_graph_path().write_text(
+            json.dumps(graph, ensure_ascii=False, indent=2), encoding='utf-8'
+        )
+
+    def _load_character_graph(self) -> Dict:
+        path = self._character_graph_path()
+        if path.exists():
+            return json.loads(path.read_text(encoding='utf-8'))
+        return {'characters': {}, 'relationships': {}, 'updated_at': None}
+
+    def get_character_graph(self) -> Dict:
+        return self._load_character_graph()
+
+    # ── 事实表 ───────────────────────────────────────────────
+
+    def append_facts(self, chapter: int, facts: List[Dict]):
+        """追加事实"""
+        self.memory_dir.mkdir(parents=True, exist_ok=True)
+        facts_dir = self.memory_dir / 'facts'
+        facts_dir.mkdir(exist_ok=True)
+        with open(self._facts_path(), 'a', encoding='utf-8') as f:
+            for fact in facts:
+                entry = {
+                    'chapter': chapter,
+                    'timestamp': datetime.now().isoformat(),
+                    **fact
+                }
+                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+
+    def get_facts(self, chapter_range: List[int] = None) -> List[Dict]:
+        """读取事实表"""
+        path = self._facts_path()
+        if not path.exists():
+            return []
+        facts = []
+        for line in path.read_text(encoding='utf-8').splitlines():
+            if not line.strip():
+                continue
+            fact = json.loads(line)
+            if chapter_range and fact.get('chapter') not in chapter_range:
+                continue
+            facts.append(fact)
+        return facts
+
+    # ── 搜索 ────────────────────────────────────────────────
+
+    def search(self, query: str) -> List[Dict]:
+        """跨记忆维度搜索"""
         results = []
-        
-        # 搜索事实
-        facts = self.get_facts(project_name)
-        for fact in facts:
-            if query.lower() in fact.get('content', '').lower():
-                results.append({
-                    'title': f"事实：{fact.get('content', '')[:50]}...",
-                    'type': 'fact',
-                    'content': fact.get('content', ''),
-                    'chapter': fact.get('chapter'),
-                    'timestamp': fact.get('timestamp')
-                })
-        
-        # 搜索摘要
-        summaries = self.get_summaries(project_name)
-        for summary in summaries:
-            if query.lower() in summary.get('content', '').lower():
-                results.append({
-                    'title': f"摘要：第{summary.get('chapter')}章",
-                    'type': 'summary',
-                    'content': summary.get('content', ''),
-                    'chapter': summary.get('chapter')
-                })
-        
+        q = query.lower()
+
+        for fact in self.get_facts():
+            if q in fact.get('content', '').lower():
+                results.append({'type': 'fact', 'chapter': fact['chapter'],
+                                'content': fact['content']})
+
+        for s in self.get_summaries():
+            if q in s['content'].lower():
+                results.append({'type': 'summary', 'chapter': s['chapter'],
+                                'content': s['content'][:200]})
+
+        graph = self.get_character_graph()
+        for name, info in graph.get('characters', {}).items():
+            if q in name.lower():
+                results.append({'type': 'character', 'chapter': info.get('first_appearance'),
+                                'content': f"{name} 首次出场第{info.get('first_appearance')}章"})
+
         return results
-    
-    def get_stats(self, project_name: str) -> Dict:
-        """获取记忆统计信息"""
-        project_dir = self.base_path
-        
-        stats = {
-            'facts_count': 0,
-            'summaries_count': 0,
-            'vector_size': 0
+
+    # ── 统计 ────────────────────────────────────────────────
+
+    def get_stats(self) -> Dict:
+        return {
+            'facts_count': self._count_lines(self._facts_path()),
+            'events_count': self._count_lines(self._event_log_path()),
+            'timeline_count': self._count_lines(self._timeline_path()),
+            'summaries_count': len(list((self.memory_dir / 'summaries').glob('ch*.txt'))
+                                   if (self.memory_dir / 'summaries').exists() else []),
+            'character_count': len(self.get_character_graph().get('characters', {})),
         }
-        
-        # 统计事实数
-        facts_file = project_dir / 'memory' / 'facts' / 'facts.jsonl'
-        if facts_file.exists():
-            with open(facts_file, 'r', encoding='utf-8') as f:
-                stats['facts_count'] = sum(1 for line in f if line.strip())
-        
-        # 统计摘要数
-        summaries_dir = project_dir / 'memory' / 'summaries'
-        if summaries_dir.exists():
-            stats['summaries_count'] = len(list(summaries_dir.glob('*.txt')))
-        
-        # 统计向量数（简化实现）
-        vectors_dir = project_dir / 'memory' / 'vectors'
-        if vectors_dir.exists():
-            stats['vector_size'] = len(list(vectors_dir.glob('*.json')))
-        
-        return stats
-    
-    def export_memory(self, project_name: str, output_path: Path):
-        """导出记忆数据"""
-        project_dir = self.base_path
-        
-        export_data = {
-            'project': project_name,
+
+    def _count_lines(self, path: Path) -> int:
+        if not path.exists():
+            return 0
+        with open(path, 'r', encoding='utf-8') as f:
+            return sum(1 for line in f if line.strip())
+
+    # ── 导出/导入 ───────────────────────────────────────────
+
+    def export_memory(self, output_path: Path):
+        data = {
             'exported_at': datetime.now().isoformat(),
-            'facts': [],
-            'summaries': []
+            'facts': self.get_facts(),
+            'events': self.get_events(),
+            'timeline': self.get_timeline(),
+            'character_graph': self.get_character_graph(),
+            'summaries': [
+                {'chapter': s['chapter'], 'content': s['content']}
+                for s in self.get_summaries()
+            ]
         }
-        
-        # 导出事实
-        facts = self.get_facts(project_name)
-        export_data['facts'] = facts
-        
-        # 导出摘要
-        summaries = self.get_summaries(project_name)
-        export_data['summaries'] = summaries
-        
-        # 保存导出文件
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(export_data, f, ensure_ascii=False, indent=2)
-        
-        return output_path
-    
-    def import_memory(self, project_name: str, import_path: Path):
-        """导入记忆数据"""
-        with open(import_path, 'r', encoding='utf-8') as f:
-            import_data = json.load(f)
-        
-        # 导入事实
-        if 'facts' in import_data:
-            self.update_facts(project_name, 0, import_data['facts'])
-        
-        # 导入摘要
-        if 'summaries' in import_data:
-            for summary in import_data['summaries']:
-                self.update_summaries(
-                    project_name, 
-                    summary.get('chapter', 0), 
-                    summary.get('content', ''),
-                    summary.get('type', 'chapter')
-                )
-    
-    def clear_memory(self, project_name: str):
-        """清空记忆数据"""
-        project_dir = self.base_path
-        memory_dir = project_dir / 'memory'
-        
-        if memory_dir.exists():
+        output_path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8'
+        )
+
+    def import_memory(self, import_path: Path):
+        data = json.loads(import_path.read_text(encoding='utf-8'))
+        if 'facts' in data:
+            for fact in data['facts']:
+                self.append_facts(fact.get('chapter', 0), [fact])
+        if 'events' in data:
+            for ev in data['events']:
+                self.append_events(ev.get('chapter', 0), [ev])
+        if 'timeline' in data:
+            for entry in data['timeline']:
+                self.append_timeline(entry.get('chapter', 0), [entry])
+        if 'character_graph' in data:
+            path = self._character_graph_path()
+            self.memory_dir.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps(data['character_graph'], ensure_ascii=False, indent=2),
+                encoding='utf-8'
+            )
+        if 'summaries' in data:
+            for s in data['summaries']:
+                self.save_summary(s['chapter'], s['content'])
+
+    def clear_memory(self):
+        """清空所有记忆"""
+        if self.memory_dir.exists():
             import shutil
-            shutil.rmtree(memory_dir)
-            memory_dir.mkdir(parents=True, exist_ok=True)
+            shutil.rmtree(self.memory_dir)
+            self.memory_dir.mkdir(parents=True, exist_ok=True)

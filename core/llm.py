@@ -245,81 +245,103 @@ class LLMManager:
         
         return "\n".join(prompt_parts)
     
-    def extract_facts(self, chapter_content: str, context: Dict) -> List[Dict]:
-        """从章节内容中提取事实"""
-        prompt = f"""请从以下章节内容中提取关键事实，包括：
+    # ── 统一记忆提取 ─────────────────────────────────────────
 
-1. 角色状态变化（位置、能力、关系等）
-2. 新出现的角色或物品
-3. 重要事件或情节发展
-4. 伏笔或悬念
-5. 时间线推进
+    def extract_chapter_memory(self, chapter_content: str, chapter: int,
+                               volume: int = 1) -> Dict:
+        """
+        从章节内容中一次性提取全部记忆，返回结构化Dict：
+        {
+          "summary": "...",
+          "events": [{"type":"...", "description":"...", "characters":["..."]}],
+          "timeline": [{"time_desc":"...", "event":"...", "location":"..."}],
+          "character_changes": [
+            {"name":"...", "emotion":"...", "state":"...", "new_info":"..."}
+          ],
+          "relationship_changes": [
+            {"from":"...", "to":"...", "relation":"...", "detail":"..."}
+          ],
+          "foreshadowing": [{"hint":"...", "status":"new/resolved"}],
+          "facts": [{"content":"...", "importance":"high/medium/low"}]
+        }
+        """
+        prompt = f"""你是专业小说分析员。请从以下第{chapter}章（第{volume}卷）内容中，一次性提取以下全部信息。
 
-章节内容：
-{chapter_content[:2000]}  # 限制长度
+【输出格式（严格JSON）】
+{{
+  "summary": "200字以内的章节摘要",
+  "events": [
+    {{"type": "battle/dialogue/discovery/revelation/travel", "description": "事件描述", "characters": ["角色名"]}}
+  ],
+  "timeline": [
+    {{"time_desc": "时间描述（如：当天下午/三天后）", "event": "发生了什么", "location": "地点"}}
+  ],
+  "character_changes": [
+    {{"name": "角色名", "emotion": "当前情绪", "state": "状态变化（如：获得新能力/受伤/加入队伍）", "new_info": "新了解到的信息"}}
+  ],
+  "relationship_changes": [
+    {{"from": "角色A", "to": "角色B", "relation": "关系类型（如：敌对/合作/师徒/暧昧）", "detail": "关系变化描述"}}
+  ],
+  "foreshadowing": [
+    {{"hint": "伏笔内容", "status": "new或resolved"}}
+  ],
+  "facts": [
+    {{"content": "客观事实描述", "importance": "high/medium/low"}}
+  ]
+}}
 
-请以JSON格式输出提取的事实，格式如下：
-[
-  {{
-    "content": "事实描述",
-    "type": "event/character/item/foreshadowing/timeline",
-    "entities": ["相关实体"],
-    "importance": "high/medium/low"
-  }}
-]"""
-        
+【章节内容】
+{chapter_content[:3000]}
+
+【注意】
+- summary 必须200字以内，只写核心情节
+- character_changes 只写本章有实际变化的角色，没有则留空数组
+- relationship_changes 只写本章新建立或发生实质变化的关系
+- foreshadowing 只写本章新埋或新解的伏笔
+- facts 只写影响后续剧情的硬事实，不要写常识"""
+
         response = self.archivist_client.chat.completions.create(
             model=self.llm_config['archivist']['model'],
             messages=[
-                {"role": "system", "content": "你是一位专业的故事分析员，擅长从小说内容中提取关键事实。"},
+                {"role": "system", "content": "你是专业小说分析员，擅长从章节内容中提取结构化记忆。只输出JSON，不要多余文字。"},
                 {"role": "user", "content": prompt}
             ],
-            temperature=self.llm_config['archivist']['temperature'],
-            max_tokens=self.llm_config['archivist']['max_tokens']
+            temperature=0.1,
+            max_tokens=1500
         )
-        
+
+        raw = response.choices[0].message.content
         try:
-            # 解析JSON响应
-            facts_text = response.choices[0].message.content
-            # 尝试提取JSON部分
-            if "```json" in facts_text:
-                facts_text = facts_text.split("```json")[1].split("```")[0]
-            elif "[" in facts_text:
-                start = facts_text.index("[")
-                end = facts_text.rindex("]") + 1
-                facts_text = facts_text[start:end]
-            
-            import json
-            facts = json.loads(facts_text)
-            return facts if isinstance(facts, list) else []
+            if "```json" in raw:
+                raw = raw.split("```json")[1].split("```")[0]
+            elif "```" in raw:
+                raw = raw.split("```")[1].split("```")[0]
+            raw = raw.strip()
+            start = raw.index('{')
+            end = raw.rindex('}') + 1
+            memory = json.loads(raw[start:end])
         except Exception as e:
-            print(f"解析事实提取结果失败：{e}")
-            return []
-    
+            print(f"解析章节记忆失败：{e}")
+            memory = {
+                "summary": chapter_content[:200],
+                "events": [], "timeline": [], "character_changes": [],
+                "relationship_changes": [], "foreshadowing": [], "facts": []
+            }
+        return memory
+
+    # ── 兼容旧接口 ─────────────────────────────────────────
+
+    def extract_facts(self, chapter_content: str, context: Dict) -> List[Dict]:
+        """兼容旧接口，返回 facts 列表"""
+        ch = context.get('current_chapter', 0)
+        vol = context.get('current_volume', 1)
+        mem = self.extract_chapter_memory(chapter_content, ch, vol)
+        return mem.get('facts', [])
+
     def generate_summary(self, chapter_content: str, chapter: int) -> str:
-        """生成章节摘要"""
-        prompt = f"""请为以下章节内容生成简洁的摘要（200字以内）：
-
-章节内容：
-{chapter_content[:2000]}
-
-要求：
-1. 概括主要情节发展
-2. 记录关键角色行动
-3. 提及重要物品或事件
-4. 保持客观中立"""
-        
-        response = self.archivist_client.chat.completions.create(
-            model=self.llm_config['archivist']['model'],
-            messages=[
-                {"role": "system", "content": "你是一位专业的故事摘要员，擅长生成简洁准确的章节摘要。"},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=self.llm_config['archivist']['temperature'],
-            max_tokens=300
-        )
-        
-        return response.choices[0].message.content
+        """兼容旧接口，返回摘要字符串"""
+        mem = self.extract_chapter_memory(chapter_content, chapter)
+        return mem.get('summary', chapter_content[:200])
     
     def review_chapter(self, chapter_content: str, chapter: int) -> Dict:
         """审查章节质量"""
