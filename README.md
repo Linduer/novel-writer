@@ -1,116 +1,176 @@
 # 长篇小说写作助手
 
-基于GLM5.2/5.3的超长小说（100万字+）上下文管理系统。
+基于GLM5.2/5.3的超长小说（100万字+）写作系统。
 
 ## 核心问题
 
-AI模型上下文窗口有限，无法一次性处理整部小说。本系统通过**分层记忆**和**智能检索**解决这一问题。
+AI模型上下文窗口有限，无法一次性处理整部小说（120万字/960章）。本系统通过**分层记忆**、**智能上下文装配**和**三级约束体系**解决这一问题。
 
 ## 系统架构
 
 ```
-长篇小说写作助手/
-├── 项目管理/          # 小说项目配置
-├── 内容存储/          # 大纲、角色、世界观、章节
-├── 记忆系统/          # 向量数据库、事实表、摘要
-├── 上下文引擎/        # 智能检索、Token预算管理
-├── 写作工具/          # GLM API集成、生成、编辑
-└── 一致性检查/        # 角色追踪、伏笔管理、时间线
+novel-writer/
+├── main.py              # CLI入口
+├── config.example.yaml  # 配置模板
+├── core/                # 核心模块
+│   ├── storage.py       # 每章一个文件夹的存储系统
+│   ├── memory.py        # 富结构记忆（事件/时间线/人物/事实）
+│   ├── context.py       # Token预算+滑动窗口上下文引擎
+│   ├── llm.py           # GLM API封装+记忆提取
+│   ├── constraints.py   # 三级约束体系（基础性/可演变/可偏离）
+│   ├── foreshadowing.py # 伏笔管理（fsXXX编号+自动关联）
+│   ├── chapter_connection.py  # 章节连接词
+│   └── checker.py       # 一致性检查
+├── templates/           # 模板文件
+│   ├── 角色档案格式规范.txt
+│   ├── 角色关系图模板.txt
+│   ├── 说话风格卡模板.txt
+│   ├── 能力体系模板.txt
+│   ├── 物品系统设定模板.txt
+│   ├── 地点档案模板.txt
+│   ├── 时间线模板.txt
+│   └── 细纲模板.txt
+├── prompts/             # 提示词模板
+└── data/{项目名}/       # 项目数据
 ```
 
 ## 核心功能
 
-### 1. 分层记忆系统
-- **全局记忆**：世界观、核心设定（永久存储）
-- **卷级记忆**：每卷摘要、角色状态变化
-- **章级记忆**：每章摘要、新事实提取
-- **片段记忆**：相关章节检索（RAG）
+### 1. Token预算上下文引擎
 
-### 2. 智能上下文装配
-- 根据当前章节需求，动态组装相关上下文
-- Token预算管理，避免超出模型限制
-- 优先级排序：当前卷 > 相关角色 > 历史摘要
+- 默认128K上下文，支持扩展到1M
+- Token分配：背景50% + 约束3% + 章节35% + 输出预留12%
+- 滑动窗口：最近5章全文 + 前20章摘要
+- 智能截断：硬切→软切→AI压缩，三级降级
 
-### 3. 一致性保障
-- 角色状态追踪（位置、能力、关系）
-- 伏笔登记与回收提醒
-- 时间线管理
-- 事实表自动更新
+### 2. 富结构记忆系统
 
-### 4. GLM模型集成
-- 支持GLM5.2/5.3 API
-- 分角色配置：写手、档案员、审查员
-- 流式生成与编辑
+- 每章提取：摘要/事件/时间线/人物变化/关系变化/事实/伏笔
+- 全局索引：`event_log.jsonl` + `timeline.jsonl` + `character_graph.json` + `facts.jsonl`
+- 去重机制：重新保存时先清除旧条目再重新提取
+
+### 3. 三级约束体系
+
+| 档 | 对应 | 说明 |
+|---|------|------|
+| Tier1 基础性 | 绝对不可偏离 | name/personality/constraints等 |
+| Tier2 可演变 | 随剧情自然变化 | age/境界/关系/status等 |
+| Tier3 可偏离 | 每章可调整 | 外貌描写/说话风格细节等 |
+
+### 4. 伏笔管理系统
+
+- 自动编号：`fs001`, `fs002`...
+- 关联章节：引入章→推进章→回收章
+- 支持待定状态（`?`）自动推进
+- 超时预警：60章未推进自动提醒
+
+### 5. 一致性检查
+
+- 角色状态追踪（位置/能力/关系）
+- 伏笔回收检查
+- 时间线冲突检测
+- 约束违规预警
 
 ## 快速开始
 
-### 安装依赖
 ```bash
+# 安装依赖
 pip install -r requirements.txt
-```
 
-### 配置模型
-```bash
+# 配置API密钥
 cp config.example.yaml config.yaml
-# 编辑config.yaml，填入GLM API密钥
-```
+# 编辑 config.yaml 填入 GLM API密钥
 
-### 初始化项目
-```bash
+# 初始化项目
 python main.py init --name "我的小说"
-```
 
-### 开始写作
-```bash
+# 写第1章
 python main.py write --chapter 1
+
+# 审查第1章
+python main.py review --chapter 1
+
+# 编辑第1章
+python main.py edit --chapter 1
+
+# 查看项目状态
+python main.py status
 ```
 
-## 文件结构
+## 完整命令列表
+
+| 命令 | 说明 |
+|------|------|
+| `init` | 初始化新项目 |
+| `write` | 写章节（自动加载上下文+提取记忆） |
+| `edit` | 编辑章节（终端或系统编辑器） |
+| `save` | 重新提取记忆（去重后覆盖） |
+| `review` | 审查章节（格式+风格+伏笔） |
+| `status` | 项目状态+Token预算报告 |
+| `chapters` | 列出所有章节 |
+| `characters` | 列出角色 |
+| `events` | 列出事件 |
+| `timeline` | 列出时间线 |
+| `query` | 全文检索 |
+| `constraints` | 查看/管理约束 |
+| `constraints-sync` | 从章节同步约束 |
+| `constraints-add` | 手动添加约束 |
+| `constraints-check` | 检查约束违规 |
+
+## 项目数据结构
 
 ```
-novel-writer/
-├── main.py              # 主程序入口
-├── config.example.yaml  # 配置示例
-├── requirements.txt     # 依赖列表
-├── core/                # 核心模块
-│   ├── memory.py        # 记忆系统
-│   ├── context.py       # 上下文引擎
-│   ├── llm.py           # GLM API封装
-│   ├── storage.py       # 文件存储
-│   └── checker.py       # 一致性检查
-├── data/                # 项目数据目录
-│   ├── {项目名}/
-│   │   ├── outline/     # 大纲
-│   │   ├── characters/  # 角色
-│   │   ├── world/       # 世界观
-│   │   ├── chapters/    # 章节
-│   │   └── memory/      # 记忆数据
+data/{项目名}/
+├── outline/               # 大纲
+│   ├── 全书大纲.txt       # 十卷结构
+│   └── 卷01_细纲.txt      # 卷级细纲
+├── characters/            # 角色
+│   └── 角色档案.txt       # 全部角色（按格式规范填写）
+├── world/                 # 世界观
+│   ├── 故事圣经.txt       # 世界规则
+│   ├── 伏笔.txt           # 伏笔登记
+│   ├── 人物关系图.txt
+│   ├── 说话风格卡.txt
+│   ├── 能力体系.txt
+│   ├── 物品系统设定.txt
+│   ├── 地点档案.txt
+│   └── 时间线.txt
+├── chapters/              # 章节（每章一个文件夹）
+│   ├── ch0001_水上乐园/
+│   │   ├── draft.txt
+│   │   ├── final.txt
+│   │   ├── metadata.json
+│   │   ├── memory.json
+│   │   └── backups/
 │   └── ...
-└── prompts/             # 提示词模板
-    ├── writer.md        # 写手提示词
-    ├── archivist.md     # 档案员提示词
-    └── reviewer.md      # 审查员提示词
+├── memory/                # 记忆数据
+│   ├── event_log.jsonl    # 全局事件索引
+│   ├── timeline.jsonl     # 全局时间线
+│   ├── character_graph.json  # 人物关系图
+│   ├── facts/facts.jsonl  # 事实表
+│   └── summaries/chNNNN.txt  # 章节摘要
+├── foreshadowing.json     # 伏笔状态
+└── project_stats.json     # 项目统计
 ```
 
 ## 使用流程
 
-1. **创建项目**：`python main.py init`
-2. **导入设定**：将大纲、角色、世界观文件放入对应目录
-3. **写章节**：`python main.py write --chapter N`
+1. **初始化**：`python main.py init --name "小说名"`
+2. **填写设定**：按模板格式填写角色/世界观/大纲
+3. **写章节**：`python main.py write --chapter N`（系统自动加载上下文）
 4. **审查**：`python main.py review --chapter N`
-5. **继续写**：系统自动加载相关上下文
+5. **编辑**：`python main.py edit --chapter N`（修改后自动备份）
+6. **保存**：`python main.py save --chapter N`（重新提取记忆，去重）
+7. **继续写**：系统自动加载最近5章全文+前20章摘要+约束+伏笔
 
 ## 设计原则
 
-1. **简单优先**：先跑起来，再优化
-2. **模块化**：每个功能独立，可单独使用
-3. **渐进式**：从手动到半自动到全自动
-4. **本地优先**：数据存储在本地，不依赖外部服务
+1. **Token预算优先**：所有上下文都经过Token计算，绝不超窗
+2. **三级约束**：基础性不可变 / 可演变随剧情更新 / 可偏离每章覆盖
+3. **富结构记忆**：不只是摘要，还有事件/时间线/人物/关系/事实
+4. **每章独立文件夹**：draft/final/metadata/memory/backups
+5. **去重机制**：重新保存时先清除旧条目再重新提取
 
-## 后续扩展
+## License
 
-- [ ] Web界面
-- [ ] 实时预览
-- [ ] 多人协作
-- [ ] 版本控制
-- [ ] 导出功能（TXT、DOCX）
+MIT
