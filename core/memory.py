@@ -9,6 +9,7 @@
     event_log.jsonl      ← 全局事件流水（append）
     character_graph.json ← 角色关系图（整体更新）
     facts.jsonl          ← 动态事实表（append）
+    numbers.jsonl        ← 数字记忆（append/update）
     summaries/
       ch{NNNN}.txt       ← 章节摘要（供滑动窗口读取）
 """
@@ -37,6 +38,7 @@ class MemoryManager:
         self._remove_lines(self._event_log_path(), chapter)
         self._remove_lines(self._timeline_path(), chapter)
         self._remove_lines(self._facts_path(), chapter)
+        self._remove_lines(self._numbers_path(), chapter)
         # 摘要直接覆盖，无需清除
 
     def _remove_lines(self, path: Path, chapter: int):
@@ -69,6 +71,9 @@ class MemoryManager:
 
     def _facts_path(self) -> Path:
         return self.memory_dir / 'facts' / 'facts.jsonl'
+
+    def _numbers_path(self) -> Path:
+        return self.memory_dir / 'numbers.jsonl'
 
     def _summary_path(self, chapter: int) -> Path:
         return self.memory_dir / 'summaries' / f"ch{chapter:04d}.txt"
@@ -285,6 +290,90 @@ class MemoryManager:
             facts.append(fact)
         return facts
 
+    # ── 数字记忆 ──────────────────────────────────────────────
+
+    def append_numbers(self, chapter: int, numbers: List[Dict]):
+        """追加数字记忆"""
+        self.memory_dir.mkdir(parents=True, exist_ok=True)
+        with open(self._numbers_path(), 'a', encoding='utf-8') as f:
+            for num in numbers:
+                entry = {
+                    'chapter': chapter,
+                    'timestamp': datetime.now().isoformat(),
+                    **num
+                }
+                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+
+    def get_numbers(self, chapter_range: List[int] = None,
+                     number_type: str = None) -> List[Dict]:
+        """读取数字记忆"""
+        path = self._numbers_path()
+        if not path.exists():
+            return []
+        numbers = []
+        for line in path.read_text(encoding='utf-8').splitlines():
+            if not line.strip():
+                continue
+            num = json.loads(line)
+            if chapter_range and num.get('chapter') not in chapter_range:
+                continue
+            if number_type and num.get('type') != number_type:
+                continue
+            numbers.append(num)
+        return numbers
+
+    def get_number_by_id(self, number_id: str) -> Optional[Dict]:
+        """根据ID获取数字记忆"""
+        for num in self.get_numbers():
+            if num.get('id') == number_id:
+                return num
+        return None
+
+    def get_numbers_for_chapter(self, chapter: int) -> List[Dict]:
+        """获取指定章节需要用到的数字（当前章节出场角色的数字 + 活跃伏笔相关数字）"""
+        all_numbers = self.get_numbers()
+        relevant = []
+        for num in all_numbers:
+            # 数字首次出现在当前章节或之前
+            if num.get('chapter', 0) <= chapter:
+                # 数字状态为活跃
+                if num.get('status', 'active') in ['active', 'changed']:
+                    relevant.append(num)
+        return relevant
+
+    def update_number_status(self, number_id: str, status: str,
+                              current_value: str = None,
+                              change_chapter: int = None,
+                              reason: str = None):
+        """更新数字记忆状态"""
+        numbers = self.get_numbers()
+        updated = False
+        for num in numbers:
+            if num.get('id') == number_id:
+                old_value = num.get('current_value', num.get('value'))
+                num['status'] = status
+                if current_value:
+                    num['current_value'] = current_value
+                if change_chapter and reason:
+                    change_history = num.get('change_history', [])
+                    change_history.append({
+                        'chapter': change_chapter,
+                        'old_value': old_value,
+                        'new_value': current_value,
+                        'reason': reason
+                    })
+                    num['change_history'] = change_history
+                num['last_used_in'] = change_chapter
+                updated = True
+                break
+        
+        if updated:
+            # 重写文件
+            self.memory_dir.mkdir(parents=True, exist_ok=True)
+            with open(self._numbers_path(), 'w', encoding='utf-8') as f:
+                for num in numbers:
+                    f.write(json.dumps(num, ensure_ascii=False) + '\n')
+
     # ── 搜索 ────────────────────────────────────────────────
 
     def search(self, query: str) -> List[Dict]:
@@ -296,6 +385,11 @@ class MemoryManager:
             if q in fact.get('content', '').lower():
                 results.append({'type': 'fact', 'chapter': fact['chapter'],
                                 'content': fact['content']})
+
+        for num in self.get_numbers():
+            if q in num.get('context', '').lower() or q in num.get('value', '').lower():
+                results.append({'type': 'number', 'chapter': num['chapter'],
+                                'content': f"{num.get('context')}: {num.get('value')}"})
 
         for s in self.get_summaries():
             if q in s['content'].lower():
@@ -317,6 +411,7 @@ class MemoryManager:
             'facts_count': self._count_lines(self._facts_path()),
             'events_count': self._count_lines(self._event_log_path()),
             'timeline_count': self._count_lines(self._timeline_path()),
+            'numbers_count': self._count_lines(self._numbers_path()),
             'summaries_count': len(list((self.memory_dir / 'summaries').glob('ch*.txt'))
                                    if (self.memory_dir / 'summaries').exists() else []),
             'character_count': len(self.get_character_graph().get('characters', {})),
@@ -336,6 +431,7 @@ class MemoryManager:
             'facts': self.get_facts(),
             'events': self.get_events(),
             'timeline': self.get_timeline(),
+            'numbers': self.get_numbers(),
             'character_graph': self.get_character_graph(),
             'summaries': [
                 {'chapter': s['chapter'], 'content': s['content']}
@@ -357,6 +453,9 @@ class MemoryManager:
         if 'timeline' in data:
             for entry in data['timeline']:
                 self.append_timeline(entry.get('chapter', 0), [entry])
+        if 'numbers' in data:
+            for num in data['numbers']:
+                self.append_numbers(num.get('chapter', 0), [num])
         if 'character_graph' in data:
             path = self._character_graph_path()
             self.memory_dir.mkdir(parents=True, exist_ok=True)

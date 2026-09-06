@@ -160,6 +160,11 @@ class ContextEngine:
         context['constraints_text'] = constraints_text
         context['constraints_tokens'] = estimate_tokens(constraints_text)
         
+        # 2.11 数字记忆（精确数字，不会被摘要压缩）
+        numbers = self._load_relevant_numbers(project_name, chapter, budget['numbers'])
+        context['numbers'] = numbers
+        context['numbers_tokens'] = sum(estimate_tokens(n.get('context', '') + n.get('value', '')) for n in numbers)
+        
         # === 第三步：计算总Token使用量 ===
         total_used = sum([
             context['system_rules_tokens'],
@@ -172,6 +177,7 @@ class ContextEngine:
             context['foreshadowing_tokens'],
             context['transition_tokens'],
             context['constraints_tokens'],
+            context['numbers_tokens'],
         ])
         
         context['total_input_tokens'] = total_used
@@ -214,7 +220,12 @@ class ContextEngine:
 1. 不致郁
 2. 不使用原作人名与商标词
 3. 不写'命运的齿轮开始转动'
-4. 不写'这一刻，他终于明白了'"""
+4. 不写'这一刻，他终于明白了'
+
+## 数字记忆规则
+1. 如果本章需要用到精确数字（密码、日期、金额等），必须使用数字记忆中提供的值
+2. 不得修改数字记忆中的精确值，除非有明确的变化剧情
+3. 如果数字发生变化，必须记录变化历史"""
         return rules
     
     def _load_relevant_characters(self, project_data: Dict, chapter: int, 
@@ -424,6 +435,53 @@ class ContextEngine:
         
         return result
     
+    def _load_relevant_numbers(self, project_name: str, chapter: int,
+                              budget_tokens: int) -> List[Dict]:
+        """加载相关数字记忆（精确数字，不会被摘要压缩）
+        
+        策略：
+        1. 读取所有活跃的数字记忆（status=active或changed）
+        2. 优先注入当前章节出场角色相关的数字
+        3. 优先注入伏笔相关的数字
+        4. 按Token预算截断
+        """
+        from .memory import MemoryManager
+        memory = MemoryManager(self.config, project_name)
+        
+        # 获取所有数字记忆
+        all_numbers = memory.get_numbers()
+        
+        # 过滤：只保留活跃的数字
+        active_numbers = [
+            n for n in all_numbers 
+            if n.get('status', 'active') in ['active', 'changed']
+        ]
+        
+        # 按类型排序：password > code > coordinate > date > amount > time > 其他
+        type_priority = {
+            'password': 0, 'code': 1, 'coordinate': 2,
+            'date': 3, 'amount': 4, 'time': 5,
+            'measurement': 6, 'count': 7, 'ratio': 8, 'sequence': 9
+        }
+        active_numbers.sort(key=lambda x: type_priority.get(x.get('type', 'sequence'), 10))
+        
+        # 按Token预算截断
+        result = []
+        used_tokens = 0
+        
+        for num in active_numbers:
+            context_text = num.get('context', '')
+            value_text = num.get('value', '')
+            tokens = estimate_tokens(context_text + value_text)
+            
+            if used_tokens + tokens > budget_tokens:
+                break
+            
+            result.append(num)
+            used_tokens += tokens
+        
+        return result
+    
     def _format_foreshadowing(self, active_foreshadowing, foreshadowing_check, 
                              budget_tokens: int) -> str:
         """格式化伏笔信息（按Token预算截断）"""
@@ -543,6 +601,15 @@ class ContextEngine:
         if foreshadowing_text:
             formatted_parts.append(f"## 伏笔信息\n{foreshadowing_text}")
         
+        # 数字记忆（精确数字，不会被摘要压缩）
+        numbers = context.get('numbers', [])
+        if numbers:
+            numbers_text = "\n".join([
+                f"- [{n.get('type')}] {n.get('context')}: {n.get('value')}"
+                for n in numbers
+            ])
+            formatted_parts.append(f"## 数字记忆（精确值，不可修改）\n{numbers_text}")
+        
         # 三级约束体系（放在最后，强调优先级）
         constraints_text = context.get('constraints_text', '')
         if constraints_text:
@@ -568,6 +635,7 @@ class ContextEngine:
             f"- 伏笔信息：{context.get('foreshadowing_tokens', 0):,} / {context['token_budget'].get('foreshadowing', 0):,}",
             f"- 衔接提示：{context.get('transition_tokens', 0):,} / {context['token_budget'].get('transition', 0):,}",
             f"- 三级约束：{context.get('constraints_tokens', 0):,} / {context['token_budget'].get('constraints', 0):,}",
+            f"- 数字记忆：{context.get('numbers_tokens', 0):,} / {context['token_budget'].get('numbers', 0):,}",
             "",
             "## 总计",
             f"- 输入Token总计：{context.get('total_input_tokens', 0):,}",
