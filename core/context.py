@@ -294,7 +294,7 @@ class ContextEngine:
         
         # 按时间顺序加载（从远到近）
         for ch in range(start_chapter, end_chapter + 1):
-            content = storage.load_chapter(project_name, ch)
+            content = storage.load_chapter(ch)
             if not content:
                 continue
             
@@ -349,7 +349,7 @@ class ContextEngine:
             return []
         
         chapter_range = list(range(summary_start, summary_end))
-        summaries = memory.get_summaries(project_name, chapter_range)
+        summaries = memory.get_summaries(chapters=chapter_range)
         
         # 按时间倒序排列
         summaries.sort(key=lambda x: x.get('chapter', 0), reverse=True)
@@ -388,7 +388,7 @@ class ContextEngine:
         start_chapter = max(1, chapter - 50)
         chapter_range = list(range(start_chapter, chapter))
         
-        facts = memory.get_facts(project_name, chapter_range)
+        facts = memory.get_facts(chapter_range=chapter_range)
         
         # 按重要性排序（high > medium > low）
         importance_order = {'high': 0, 'medium': 1, 'low': 2}

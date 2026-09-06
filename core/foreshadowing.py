@@ -235,6 +235,23 @@ class ForeshadowingManager:
         return [fs for fs in foreshadowing_map.values() 
                 if fs.status == ForeshadowingStatus.ACTIVE]
     
+    def find_foreshadowing_by_hint(self, project_name: str, hint: str) -> Optional[Foreshadowing]:
+        """根据描述模糊匹配活跃伏笔（优先匹配最长公共子串）"""
+        active = self.get_active_foreshadowing(project_name)
+        if not active or not hint:
+            return None
+        best_fs = None
+        best_len = 0
+        for fs in active:
+            desc = fs.description
+            # 双向检查子串
+            if hint[:20] in desc or desc[:20] in hint:
+                overlap = min(len(hint), len(desc), 20)
+                if overlap > best_len:
+                    best_len = overlap
+                    best_fs = fs
+        return best_fs
+    
     def get_resolved_foreshadowing(self, project_name: str) -> List[Foreshadowing]:
         """获取所有已解决伏笔"""
         foreshadowing_map = self.load_foreshadowing(project_name)

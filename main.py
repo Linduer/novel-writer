@@ -99,7 +99,8 @@ def init(name):
 @cli.command()
 @click.option('--chapter', type=int, required=True, help='章节编号')
 @click.option('--volume',  type=int, help='卷编号（可选，默认自动推算）')
-def write(chapter, volume):
+@click.option('--name',    default='', help='章节名称（可选）')
+def write(chapter, volume, name):
     """生成章节草稿（自动检查 + 提取记忆）"""
     console.print(Panel(f"[bold blue]写作章节：第{chapter}章[/bold blue]"))
     config = load_config()
@@ -121,7 +122,7 @@ def write(chapter, volume):
     draft = m['llm'].generate_chapter_with_connection(ctx, chapter, volume)
 
     # 3. 保存草稿
-    ch_dir = m['storage'].save_chapter(chapter, draft, status="draft")
+    ch_dir = m['storage'].save_chapter(chapter, draft, chapter_name=name, status="draft")
     console.print(f"[green]✓[/green] 草稿已保存：{ch_dir}")
 
     # 4. 一致性检查
@@ -187,12 +188,9 @@ def write(chapter, volume):
             )
             m['foreshadow'].add_foreshadowing(pname, new_fs)
         elif hint.get('status') == 'resolved':
-            # 按描述模糊匹配已有伏笔并解决
-            active = m['foreshadow'].get_active_foreshadowing(pname)
-            for fs in active:
-                if hint_text[:10] in fs.description or fs.description[:10] in hint_text:
-                    m['foreshadow'].resolve_foreshadowing(pname, fs.id, f"ch{chapter:04d}")
-                    break
+            matched = m['foreshadow'].find_foreshadowing_by_hint(pname, hint_text)
+            if matched:
+                m['foreshadow'].resolve_foreshadowing(pname, matched.id, f"ch{chapter:04d}")
 
     # 更新项目统计
     m['storage'].update_project_stats(pname)
@@ -226,6 +224,17 @@ def edit(chapter, editor):
     if not content:
         console.print(f"[red]错误：未找到第{chapter}章内容，请先 write 生成[/red]")
         return
+
+    # 自动备份当前内容
+    import shutil
+    from datetime import datetime
+    ch_dir = m['storage']._chapter_dir(chapter)
+    backup_dir = ch_dir / 'backups'
+    backup_dir.mkdir(exist_ok=True)
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    backup_file = backup_dir / f"backup_{ts}.txt"
+    backup_file.write_text(content, encoding='utf-8')
+    console.print(f"[dim]已自动备份到：{backup_file.name}[/dim]")
 
     console.print(Panel(f"[bold yellow]编辑章节：第{chapter}章[/bold yellow]"))
     console.print(f"[dim]当前字数：{len(content)} 字[/dim]\n")
@@ -307,6 +316,10 @@ def save(chapter, yes):
     # 2. 重新提取记忆（内容可能已修改）
     volume = (chapter - 1) // 96 + 1
     console.print("[cyan]重新提取章节记忆...[/cyan]")
+
+    # 先清除旧条目，防止重复写入
+    m['memory'].clear_chapter_entries(chapter)
+
     mem = m['llm'].extract_chapter_memory(content, chapter, volume)
 
     # 保存本章记忆
@@ -349,11 +362,9 @@ def save(chapter, yes):
             )
             m['foreshadow'].add_foreshadowing(pname, new_fs)
         elif hint.get('status') == 'resolved':
-            active = m['foreshadow'].get_active_foreshadowing(pname)
-            for fs in active:
-                if hint_text[:10] in fs.description or fs.description[:10] in hint_text:
-                    m['foreshadow'].resolve_foreshadowing(pname, fs.id, f"ch{chapter:04d}")
-                    break
+            matched = m['foreshadow'].find_foreshadowing_by_hint(pname, hint_text)
+            if matched:
+                m['foreshadow'].resolve_foreshadowing(pname, matched.id, f"ch{chapter:04d}")
 
     m['storage'].update_project_stats(pname)
 

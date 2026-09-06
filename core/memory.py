@@ -30,6 +30,32 @@ class MemoryManager:
         self.base_path = Path(data_dir)
         self.memory_dir = self.base_path / 'memory'
 
+    # ── 按章节清除旧条目（防止重复写入）────────────────────
+
+    def clear_chapter_entries(self, chapter: int):
+        """清除指定章节在全局记忆中的所有条目，用于 save 时重新提取前清理"""
+        self._remove_lines(self._event_log_path(), chapter)
+        self._remove_lines(self._timeline_path(), chapter)
+        self._remove_lines(self._facts_path(), chapter)
+        # 摘要直接覆盖，无需清除
+
+    def _remove_lines(self, path: Path, chapter: int):
+        """从 jsonl 文件中移除指定章节的所有行"""
+        if not path.exists():
+            return
+        lines = path.read_text(encoding='utf-8').splitlines()
+        kept = []
+        for line in lines:
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+                if entry.get('chapter') != chapter:
+                    kept.append(line)
+            except json.JSONDecodeError:
+                kept.append(line)
+        path.write_text('\n'.join(kept) + ('\n' if kept else ''), encoding='utf-8')
+
     # ── 全局文件路径 ──────────────────────────────────────────
 
     def _timeline_path(self) -> Path:
