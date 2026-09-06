@@ -1,0 +1,302 @@
+# ============================================================
+# 势力/组织格式规范 v1.0
+# 管理故事中的势力、阵营、组织
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、为什么需要势力系统
+# ════════════════════════════════════════════════════════════
+
+长篇小说中势力众多，不管理会出问题：
+  1. 不知道某个势力的立场是什么
+  2. 不知道势力之间的关系
+  3. 角色所属势力变化时没有追踪
+  4. 势力的消亡/崛起没有记录
+
+# ════════════════════════════════════════════════════════════
+#  二、字段分级
+# ════════════════════════════════════════════════════════════
+
+## Tier1 基础性（绝对不可偏离）
+
+  name                    势力名称（唯一标识）
+  type                    势力类型（见取值表）
+  leader                  首领/掌门
+  ideology                核心理念/宗旨
+  territory               势力范围/地盘
+  first_appearance        首次出场章节
+  constraints             势力的硬规则/禁忌
+
+## Tier2 可演变（随剧情自然变化）
+
+  status                  势力状态（active/destroyed/merged/expanded）
+  member_count            成员数量
+  allies                  盟友势力列表
+  enemies                 敌对势力列表
+  key_members             核心成员列表
+  power_level             势力强度（弱/中/强/极强）
+  key_events              势力关键事件
+  dissolution_chapter     势力消亡章节
+
+## Tier3 可偏离（根据行文情况调整）
+
+  description             势力描述（每章可微调）
+  reputation              外界对势力的评价
+
+
+# ════════════════════════════════════════════════════════════
+#  三、取值表
+# ════════════════════════════════════════════════════════════
+
+## type（势力类型）
+
+| 值         | 说明       | 示例                    |
+|------------|------------|-------------------------|
+| faction    | 阵营/门派  | 归墟教、沧澜遗族        |
+| guild      | 公会/组织  | 义盟、天工阁            |
+| military   | 军事组织   | 掠夺王庭、仙城守军      |
+| merchant   | 商业组织   | 商路网                  |
+| family     | 家族/血脉  | 沈家、黑鲨王族          |
+| school     | 学院/门派  | 乐园学校                |
+| religion   | 宗教/信仰  | 归墟教                  |
+| government | 政府/政权  | 四海会盟                |
+| criminal   | 犯罪组织   | 黑帮                    |
+| alliance   | 联盟       | 四海会盟                |
+
+## status（势力状态）
+
+| 值          | 说明           |
+|-------------|----------------|
+| active      | 活跃           |
+| destroyed   | 已毁灭         |
+| merged      | 已合并         |
+| expanded    | 已扩张         |
+| declining   | 衰落中         |
+| rising      | 崛起中         |
+| hidden      | 隐藏/潜伏     |
+| dissolved   | 已解散         |
+
+## power_level（势力强度）
+
+| 值    | 说明   | 示例            |
+|-------|--------|-----------------|
+| weak  | 弱小   | 小型海盗团      |
+| mid   | 中等   | 一般门派        |
+| strong| 强大   | 义盟、天工阁    |
+| super | 极强   | 归墟教、沧溟    |
+
+
+# ════════════════════════════════════════════════════════════
+#  四、字段说明
+# ════════════════════════════════════════════════════════════
+
+## 基础信息
+- name:               势力名称（唯一标识）
+- type:               势力类型（见取值表）
+- leader:             首领/掌门
+- ideology:           核心理念/宗旨
+- territory:          势力范围/地盘
+- first_appearance:   首次出场章节
+- constraints:        势力的硬规则/禁忌
+
+## 状态追踪
+- status:             当前状态（见取值表）
+- member_count:       成员数量
+- power_level:        势力强度
+- key_events:         势力关键事件（数组）
+- dissolution_chapter: 势力消亡章节
+
+## 关系网络
+- allies:             盟友势力列表
+- enemies:            敌对势力列表
+- key_members:        核心成员列表
+
+## 氛围描述
+- description:        势力描述（一句话）
+- reputation:         外界对势力的评价
+
+
+# ════════════════════════════════════════════════════════════
+#  五、示例
+# ════════════════════════════════════════════════════════════
+
+# ── 示例1：主角阵营 ──
+
+- name: 乐园
+  type: guild
+  leader: 沈浮
+  ideology: "让每个人都能快乐地玩"
+  territory: 近海废墟（乐园所在）
+  first_appearance: ch001
+  constraints:
+    - "检票闸机验的就是快乐"
+    - "恐惧供奉、苦修跪拜、伪装的笑脸一律无效"
+    - "繁荣悖论到ch702-705才看懂"
+  status: active
+  member_count: 100
+  power_level: strong
+  allies:
+    - 义盟（卷二后）
+    - 天工阁（卷七后）
+    - 沧澜遗族（卷五后）
+  enemies:
+    - 归墟教
+    - 掠夺王庭（卷三后和解）
+  key_members:
+    - 沈浮（园长）
+    - 乐园中枢（系统）
+    - 大嘴三姆（主T）
+    - 蓝博（主C）
+    - 程霜（通商专使→盟主）
+  key_events:
+    - chapter: ch001
+      event: "开业"
+    - chapter: ch555
+      event: "方舟点火"
+    - chapter: ch864
+      event: "终战"
+    - chapter: ch957
+      event: "搁浅开业"
+    - chapter: ch959
+      event: "免票"
+
+# ── 示例2：反派阵营 ──
+
+- name: 归墟教
+  type: religion
+  leader: 敖涸（前期）→ 渊
+  ideology: "水要回来"
+  territory: 归墟外围
+  first_appearance: ch183
+  constraints:
+    - "渊的代理人，替渊记账"
+    - "三段式死亡"
+  status: destroyed
+  dissolution_chapter: ch929
+  power_level: super
+  allies: []
+  enemies:
+    - 乐园
+    - 义盟
+  key_members:
+    - 敖涸（长老→归队）
+    - 乌檀（执法僧→殉教）
+    - 渡师（叛逃者）
+  key_events:
+    - chapter: ch183
+      event: "首次出场"
+    - chapter: ch734
+      event: "敖涸归队"
+    - chapter: ch929
+      event: "渊残滓撑死，归墟教覆灭"
+
+# ── 示例3：中立阵营 ──
+
+- name: 义盟
+  type: guild
+  leader: 万舟 → 程霜
+  ideology: "开源、通商、合作"
+  territory: 千帆海域
+  first_appearance: ch097
+  constraints:
+    - "三派（开源/保守/中立）内部博弈"
+    - "棋局全程由万舟掌控"
+  status: active
+  power_level: strong
+  allies:
+    - 乐园（卷二后）
+    - 天工阁
+  enemies:
+    - 归墟教
+  key_members:
+    - 万舟（盟首）
+    - 程霜（巡查使→盟主）
+    - 卫崇仓（保守派→倒台）
+  key_events:
+    - chapter: ch097
+      event: "义盟首次出场"
+    - chapter: ch130
+      event: "程霜倒戈"
+    - chapter: ch948
+      event: "万舟退休，程霜接班"
+
+# ── 示例4：军事组织 ──
+
+- name: 掠夺王庭
+  type: military
+  leader: 黑鲨王 → 霍青澜
+  ideology: "万物有价，掠夺即交易"
+  territory: 黑市环礁
+  first_appearance: ch193
+  constraints:
+    - "黑鲨王不死于大喇叭"
+    - "终局传位收山"
+  status: dissolved
+  dissolution_chapter: ch288
+  power_level: strong
+  allies:
+    - 乐园（卷三后）
+  enemies:
+    - 义盟（前期）
+  key_members:
+    - 黑鲨王（王）
+    - 霍青澜（独女→新海巡统领）
+  key_events:
+    - chapter: ch193
+      event: "掠夺王庭首次出场"
+    - chapter: ch249
+      event: "黑鲨王被渡走"
+    - chapter: ch288
+      event: "黑鲨王传位，王庭解散"
+
+# ── 示例5：学术组织 ──
+
+- name: 天工阁
+  type: guild
+  leader: 公输衡 → 公输瑶
+  ideology: "科学至上，数据说话"
+  territory: 移动灯塔
+  first_appearance: ch375
+  constraints:
+    - "检测令的任务是证明乐园是伪科学"
+    - "公输瑶最终证明'它不是机器'"
+  status: active
+  power_level: strong
+  allies:
+    - 乐园（卷七后）
+    - 义盟
+  enemies:
+    - 归墟教（前期）
+  key_members:
+    - 公输衡（阁主）
+    - 公输瑶（大小姐→阁主）
+    - 章铁规（深查主持→共存论者）
+  key_events:
+    - chapter: ch375
+      event: "天工阁首次出场"
+    - chapter: ch592
+      event: "灯塔火种认主"
+    - chapter: ch936
+      event: "章铁规最后报告：共存"
+
+
+# ════════════════════════════════════════════════════════════
+#  六、与其他系统的关联
+# ════════════════════════════════════════════════════════════
+
+1. 角色档案
+   - 角色的 key_relationships → 势力的 key_members
+   - 角色的 status → 势力的 status
+
+2. 角色关系图
+   - 势力之间的 allies/enemies → 关系图中的关系类型
+
+3. 地点档案
+   - 势力的 territory → 地点的 owner
+
+4. 时间线
+   - 势力的 key_events → 时间线的事件节点
+   - 势力的 dissolution_chapter → 时间线的势力消亡
+
+5. 伏笔系统
+   - 势力的关键事件 → 伏笔的引入/推进/回收

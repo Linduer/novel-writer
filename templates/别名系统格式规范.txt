@@ -1,0 +1,261 @@
+# ============================================================
+# 别名系统格式规范 v1.0
+# 管理角色的所有称呼方式，防止LLM搞混
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、为什么需要别名系统
+# ════════════════════════════════════════════════════════════
+
+同一个角色在不同场景下有不同的称呼：
+  沈浮 → 沈园长、园长、老板、小沈、浮儿
+  大嘴三姆 → 三姆、启、卫队长、工牌001、免费英灵
+  乐园中枢 → 中枢、本中枢、俺、金牌客服
+
+如果不管理别名，LLM会：
+  1. 不知道"沈园长"和"沈浮"是同一个人
+  2. 在同一章里混用多个称呼，读者困惑
+  3. 在不同章里对同一角色用不同称呼，不一致
+
+# ════════════════════════════════════════════════════════════
+#  二、别名分类
+# ════════════════════════════════════════════════════════════
+
+## Tier1 基础别名（永久不变）
+  name:           角色本名（唯一标识）
+  formal_name:    正式名称（如"乐园中枢"）
+  true_name:      真实名称（如"启"）
+
+## Tier2 关系别名（随关系变化）
+  title:          称号/头衔（如"园长"、"卫队长"）
+  relationship:   关系称呼（如"老板"、"园长"、"大哥"）
+
+## Tier3 场景别名（随场景变化）
+  nickname:       昵称/外号（如"三姆"、"钩子哥"）
+  stage_name:     舞台名/艺名（如"小丑"）
+  alias:          假名/化名（如"巡查使"）
+  insult:         贬称/蔑称（如"免费英灵"）
+
+## 特殊别名
+  self_call:      自称（如沈浮说"我"，中枢说"本中枢/俺"）
+  reader_call:    读者视角称呼（旁白用哪个名字）
+
+
+# ════════════════════════════════════════════════════════════
+#  三、字段说明
+# ════════════════════════════════════════════════════════════
+
+别名档案格式：
+
+- name:             角色本名（唯一标识）
+- aliases:
+    # Tier1 基础别名
+    formal_name:    正式名称
+    true_name:      真实名称（可选）
+
+    # Tier2 关系别名
+    titles:         称号列表
+      - title:      称号
+        used_by:    谁在用
+        used_when:  什么场景用
+
+    # Tier3 场景别名
+    nicknames:      昵称列表
+    stage_names:    舞台名列表
+    aliases:        化名列表
+    insults:        贬称列表
+
+    # 特殊别名
+    self_call:      自称
+    reader_call:    读者视角称呼
+
+- usage_rules:
+    # 别名使用规则
+    - rule:         规则描述
+      chapter_from: 从哪章开始
+      chapter_to:   到哪章结束（可选）
+
+- alias_changes:
+    # 别名变化历史
+    - chapter:      章节
+      old_alias:    旧称呼
+      new_alias:    新称呼
+      reason:       原因
+
+
+# ════════════════════════════════════════════════════════════
+#  四、示例
+# ════════════════════════════════════════════════════════════
+
+# ── 示例1：主角（称呼最复杂）──
+
+- name: 沈浮
+  aliases:
+    formal_name: 沈浮
+    true_name: 沈浮
+    titles:
+      - title: 园长
+        used_by: 乐园全员、游客
+        used_when: 日常、工作
+      - title: 老板
+        used_by: 乐园中枢
+        used_when: 日常、吐槽
+      - title: 小沈
+        used_by: 爷爷（回忆中）
+        used_when: 家庭场景
+      - title: 沈园长
+        used_by: 外部势力
+        used_when: 正式场合
+    nicknames:
+      - "沈浮"
+    stage_names: []
+    aliases: []
+    insults:
+      - "负债园长"
+        used_by: 读者视角
+        used_when: 旁白
+    self_call: 我
+    reader_call: 沈浮
+  usage_rules:
+    - rule: "日常用'沈浮'或'园长'，正式场合用'沈园长'"
+    - rule: "中枢称呼从'老板'演变，839后可混用"
+    - rule: "提爷爷就闭嘴，转去巡园"
+
+# ── 示例2：系统角色（自称变化）──
+
+- name: 乐园中枢
+  aliases:
+    formal_name: 乐园中枢
+    true_name: 沧溟（神识切片）
+    titles:
+      - title: 金牌客服
+        used_by: 沈浮
+        used_when: 日常吐槽
+    nicknames:
+      - "中枢"
+      - "本中枢"（839前）
+      - "俺"（839后）
+    self_call: 本中枢（839前）→ 俺（839后）
+    reader_call: 中枢
+  usage_rules:
+    - rule: "839前自称'本中枢'，839后自称'俺'"
+    - rule: "坦白前不能暴露真实身份"
+  alias_changes:
+    - chapter: ch839
+      old_alias: 本中枢
+      new_alias: 俺
+      reason: "坦白夜，自称改'俺'，重构完成"
+
+# ── 示例3：英灵角色（觉醒后称呼变化）──
+
+- name: 大嘴三姆
+  aliases:
+    formal_name: 大嘴三姆
+    true_name: 启
+    titles:
+      - title: 工牌001
+        used_by: 乐园系统
+        used_when: 工作场合
+      - title: 卫队长
+        used_by: 沧溟（回忆中）
+        used_when: 三千年前提及
+    nicknames:
+      - "三姆"
+      - "启"（179-180觉醒后）
+    self_call: 俺
+    reader_call: 三姆
+  usage_rules:
+    - rule: "179前只叫'三姆'，179后可叫'启'"
+    - rule: "卫队长身份179-180前零闪回"
+  alias_changes:
+    - chapter: ch179
+      old_alias: 三姆
+      new_alias: 启
+      reason: "三星觉醒，卫队长身份揭晓"
+
+# ── 示例4：反派角色（立场变化称呼变化）──
+
+- name: 敖涸
+  aliases:
+    formal_name: 敖涸
+    true_name: 沧澜叛族长老
+    titles:
+      - title: 长老
+        used_by: 沧澜族人
+        used_when: 正式场合
+      - title: 记账人
+        used_by: 渊
+        used_when: 合作关系
+    nicknames:
+      - "涸"（734归队后，沈浮称呼）
+    self_call: 朕
+    reader_call: 敖涸
+  usage_rules:
+    - rule: "朕是自称，不是皇帝，是文士腔"
+    - rule: "734归队后，沈浮可叫'涸'"
+  alias_changes:
+    - chapter: ch734
+      old_alias: 敖涸
+      new_alias: 涸
+      reason: "归队，沈浮改口叫'涸'"
+
+# ── 示例5：女主（关系变化称呼变化）──
+
+- name: 程霜
+  aliases:
+    formal_name: 程霜
+    true_name: 程霜
+    titles:
+      - title: 巡查使
+        used_by: 义盟
+        used_when: 公务场合
+      - title: 通商专使
+        used_by: 乐园
+        used_when: 合作后
+      - title: 盟主
+        used_by: 义盟
+        used_when: 终局
+    nicknames:
+      - "程霜"
+    self_call: 我
+    reader_call: 程霜
+  usage_rules:
+    - rule: "倒戈前叫'巡查使'，倒戈后叫'通商专使'"
+    - rule: "终局叫'盟主'"
+  alias_changes:
+    - chapter: ch130
+      old_alias: 巡查使
+      new_alias: 通商专使
+      reason: "倒戈，义盟→乐园"
+    - chapter: ch948
+      old_alias: 通商专使
+      new_alias: 盟主
+      reason: "终局接班万舟"
+
+
+# ════════════════════════════════════════════════════════════
+#  五、上下文引擎集成
+# ════════════════════════════════════════════════════════════
+
+上下文引擎在组装prompt时会注入别名信息：
+
+1. 读取当前章节出场角色的别名档案
+2. 注入"当前章节应该用哪些称呼"
+3. 防止LLM混用称呼
+
+## Token预算分配
+
+别名系统占Token预算的1%（约128 tokens for 128K context）：
+
+  当前章节出场角色的别名：~100 tokens
+  别名使用规则：~28 tokens
+
+
+# ════════════════════════════════════════════════════════════
+#  六、查询命令
+# ════════════════════════════════════════════════════════════
+
+python main.py aliases                           # 查看所有角色别名
+python main.py aliases --character 沈浮           # 查看特定角色别名
+python main.py aliases --check ch0402             # 检查第402章别名使用是否正确
+python main.py aliases --diff ch001 ch839         # 对比两个章节的称呼变化

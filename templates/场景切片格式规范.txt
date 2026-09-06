@@ -1,0 +1,329 @@
+# ============================================================
+# 场景切片格式规范 v1.0
+# 将章节拆分为场景，每个场景有明确的五要素
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、为什么需要场景切片
+# ════════════════════════════════════════════════════════════
+
+一个章节可能有多个场景，不切片会导致：
+  1. 不知道某个场景发生在哪
+  2. 不知道某个场景有哪些人
+  3. 不知道某个场景的情绪走向
+  4. 不知道场景之间的转换是否流畅
+
+场景切片的好处：
+  1. 写作时知道每段该写什么
+  2. 审查时知道场景转换是否流畅
+  3. 检查时知道人物/地点是否一致
+
+# ════════════════════════════════════════════════════════════
+#  二、字段分级
+# ════════════════════════════════════════════════════════════
+
+## Tier1 基础性（绝对不可偏离）
+
+  scene_id                场景ID（chNNNN_SNN格式）
+  chapter                 所属章节
+  order                   场景顺序（1,2,3...）
+  location                场景地点（对应地点档案）
+  characters              场景人物列表
+  pov                     视角人物（谁的视角）
+  time                    时间（白天/夜晚/具体时间）
+  event                   核心事件（一句话）
+
+## Tier2 可演变（随剧情自然变化）
+
+  emotion_start           场景开始时的情绪
+  emotion_end             场景结束时的情绪
+  conflict                场景冲突/张力
+  tension_level           紧张度（1-10）
+  pacing                  节奏（快/中/慢）
+  transition_in           进入方式（怎么进入这个场景）
+  transition_out          退出方式（怎么离开这个场景）
+
+## Tier3 可偏离（根据行文情况调整）
+
+  atmosphere              氛围描写
+  sensory_details         感官细节
+  dialogue_style          对话风格
+
+
+# ════════════════════════════════════════════════════════════
+#  三、取值表
+# ════════════════════════════════════════════════════════════
+
+## emotion（情绪类型）
+
+| 值        | 说明     | 适用场景            |
+|-----------|----------|---------------------|
+| 平静      | 日常     | 过渡、交代          |
+| 轻松      | 搞笑     | 日常、吐槽          |
+| 紧张      | 危机     | 战斗、逃亡          |
+| 悲伤      | 离别     | 死亡、分手          |
+| 愤怒      | 冲突     | 争吵、对峙          |
+| 喜悦      | 胜利     | 突破、成功          |
+| 恐惧      | 危险     | 面对强敌            |
+| 震惊      | 反转     | 真相揭露            |
+| 温暖      | 感动     | 守护、牺牲          |
+| 绝望      | 低谷     | 真败、至暗时刻      |
+| 释然      | 放下     | 和解、告别          |
+| 决心      | 抉择     | 重大决定            |
+
+## tension_level（紧张度）
+
+| 等级 | 说明 | 对应场景 |
+|------|------|----------|
+| 1-2  | 日常 | 聊天、交代 |
+| 3-4  | 轻微冲突 | 争吵、质疑 |
+| 5-6  | 中等紧张 | 对峙、谈判 |
+| 7-8  | 高度紧张 | 战斗、逃亡 |
+| 9-10 | 极度紧张 | 生死、终战 |
+
+## pacing（节奏）
+
+| 值    | 说明           | 句式特点          |
+|-------|----------------|-------------------|
+| 快    | 紧迫、动作     | 短句、动词多      |
+| 中    | 正常叙事       | 长短句交替        |
+| 慢    | 抒情、回忆     | 长句、描写多      |
+
+## transition（场景转换方式）
+
+| 值        | 说明           | 示例                |
+|-----------|----------------|---------------------|
+| cut       | 硬切           | 直接跳转            |
+| fade      | 淡入淡出       | 时间流逝            |
+| action    | 动作转场       | 角色走动            |
+| dialogue  | 对话转场       | "走吧"→下一个场景  |
+| object    | 物件转场       | 看向某个物件→回忆  |
+| sound     | 声音转场       | 广播声→下一个场景  |
+| time      | 时间跳跃       | "三天后"            |
+
+
+# ════════════════════════════════════════════════════════════
+#  四、字段说明
+# ════════════════════════════════════════════════════════════
+
+## 基础信息
+- scene_id:          场景ID（chNNNN_SNN格式，如ch0001_S01）
+- chapter:           所属章节（chNNNN格式）
+- order:             场景顺序（1,2,3...）
+- location:          场景地点（对应地点档案的name）
+- characters:        场景人物列表（数组）
+- pov:               视角人物（谁的视角）
+- time:              时间（白天/夜晚/具体时间）
+- event:             核心事件（一句话）
+
+## 情绪与节奏
+- emotion_start:     场景开始时的情绪
+- emotion_end:       场景结束时的情绪
+- conflict:          场景冲突/张力
+- tension_level:     紧张度（1-10）
+- pacing:            节奏（快/中/慢）
+
+## 场景转换
+- transition_in:     进入方式（怎么进入这个场景）
+- transition_out:    退出方式（怎么离开这个场景）
+
+## 氛围描写
+- atmosphere:        氛围描写（一句话）
+- sensory_details:   感官细节（声音/气味/温度）
+- dialogue_style:    对话风格
+
+
+# ════════════════════════════════════════════════════════════
+#  五、示例
+# ════════════════════════════════════════════════════════════
+
+# ── 示例1：战斗场景 ──
+
+- scene_id: ch0095_S01
+  chapter: ch0095
+  order: 1
+  location: 造浪池
+  characters: ["沈浮", "乐园中枢", "水老大", "彪哥"]
+  pov: 沈浮
+  time: 夜晚
+  event: "满潮夜，水老大率队来袭"
+  emotion_start: 紧张
+  emotion_end: 愤怒
+  conflict: "水老大要抢乐园，沈浮要守住"
+  tension_level: 8
+  pacing: 快
+  transition_in: cut
+  transition_out: action
+  atmosphere: "月黑风高，浪声轰鸣"
+  sensory_details: "咸湿的海风，浪花拍打声，远处的叫喊声"
+  dialogue_style: "短句、紧张、报价式吐槽"
+
+# ── 示例2：日常场景 ──
+
+- scene_id: ch0001_S01
+  chapter: ch0001
+  order: 1
+  location: 洪水原址
+  characters: ["沈浮", "乐园中枢"]
+  pov: 沈浮
+  time: 白天
+  event: "乐园开业第三天，洪水来袭"
+  emotion_start: 轻松
+  emotion_end: 震惊
+  conflict: "开业的喜悦被洪水打断"
+  tension_level: 3
+  pacing: 中
+  transition_in: cut
+  transition_out: sound
+  atmosphere: "阳光、海浪、开业的喜悦"
+  sensory_details: "阳光照在水面上，游客的笑声，广播里的播报"
+  dialogue_style: "报价式吐槽、播报体"
+
+# ── 示例3：情感场景 ──
+
+- scene_id: ch0130_S02
+  chapter: ch0130
+  order: 2
+  location: 彩虹滑道
+  characters: ["沈浮", "程霜"]
+  pov: 程霜
+  time: 夜晚
+  event: "程霜偷刷滑道，被沈浮发现"
+  emotion_start: 紧张
+  emotion_end: 温暖
+  conflict: "程霜是义盟巡查使，不该在这里"
+  tension_level: 5
+  pacing: 慢
+  transition_in: action
+  transition_out: dialogue
+  atmosphere: "月光下的滑道，水花闪烁"
+  sensory_details: "滑道的水流声，月光反射，微凉的夜风"
+  dialogue_style: "公文腔转日常"
+
+# ── 示例4：高潮场景 ──
+
+- scene_id: ch0555_S01
+  chapter: ch0555
+  order: 1
+  location: 造浪池
+  characters: ["沈浮", "乐园中枢", "大嘴三姆", "蓝博", "所有英灵"]
+  pov: 沈浮
+  time: 夜晚
+  event: "方舟点火夜，乐园全功率启动"
+  emotion_start: 紧张
+  emotion_end: 喜悦
+  conflict: "点火成功=乐园升级，失败=乐园毁灭"
+  tension_level: 10
+  pacing: 快
+  transition_in: cut
+  transition_out: fade
+  atmosphere: "全园灯火通明，所有设施同时启动"
+  sensory_details: "设施的轰鸣声，游客的尖叫声，信仰值飙升的提示音"
+  dialogue_style: "播报体、短句、报价式"
+
+# ── 示例5：悲剧场景 ──
+
+- scene_id: ch0857_S01
+  chapter: ch0857
+  order: 1
+  location: 海啸池
+  characters: ["小丑贾克", "季小满", "所有学员"]
+  pov: 贾克
+  time: 夜晚
+  event: "小丑贾克殉园，最后一次表演"
+  emotion_start: 悲伤
+  emotion_end: 释然
+  conflict: "贾克知道自己是替补，要替学员们挡下致命一击"
+  tension_level: 9
+  pacing: 慢
+  transition_in: cut
+  transition_out: fade
+  atmosphere: "舞台上，聚光灯下"
+  sensory_details: "观众的掌声，音乐声，贾克最后的捧哏"
+  dialogue_style: "相声腔，金句制造机"
+
+
+# ════════════════════════════════════════════════════════════
+#  六、场景切片文件结构
+# ════════════════════════════════════════════════════════════
+
+每个章节可以有一个场景切片文件：
+
+data/{项目名}/chapters/ch{NNNN}/
+├── draft.txt           # 正文草稿
+├── final.txt           # 最终版
+├── metadata.json       # 章节元数据
+├── memory.json         # 章节记忆
+├── scenes.json         # 场景切片（新增）
+└── backups/            # 备份
+
+## scenes.json 格式
+
+{
+  "chapter": "ch0095",
+  "scene_count": 3,
+  "scenes": [
+    {
+      "scene_id": "ch0095_S01",
+      "order": 1,
+      "location": "造浪池",
+      "characters": ["沈浮", "乐园中枢", "水老大"],
+      "pov": "沈浮",
+      "time": "夜晚",
+      "event": "满潮夜，水老大率队来袭",
+      "emotion_start": "紧张",
+      "emotion_end": "愤怒",
+      "tension_level": 8,
+      "pacing": "快"
+    },
+    {
+      "scene_id": "ch0095_S02",
+      "order": 2,
+      "location": "造浪池",
+      "characters": ["沈浮", "彪哥"],
+      "pov": "沈浮",
+      "time": "夜晚",
+      "event": "彪哥被渔网打包抛出五百米",
+      "emotion_start": "愤怒",
+      "emotion_end": "轻松",
+      "tension_level": 6,
+      "pacing": "快"
+    },
+    {
+      "scene_id": "ch0095_S03",
+      "order": 3,
+      "location": "造浪池",
+      "characters": ["沈浮", "乐园中枢", "水老大"],
+      "pov": "沈浮",
+      "time": "夜晚",
+      "event": "一浪拍碎黑帮船队，水老大按死在三十公分深的水里",
+      "emotion_start": "轻松",
+      "emotion_end": "喜悦",
+      "tension_level": 4,
+      "pacing": "中"
+    }
+  ]
+}
+
+
+# ════════════════════════════════════════════════════════════
+#  七、与其他系统的关联
+# ════════════════════════════════════════════════════════════
+
+1. 地点档案
+   - 场景的 location → 地点的 name
+   - 场景的 atmosphere → 地点的 atmosphere
+
+2. 角色档案
+   - 场景的 characters → 角色的 name
+   - 场景的 pov → 角色的 speaking_style
+
+3. 说话风格
+   - 场景的 dialogue_style → 角色的 signature_style
+
+4. 伏笔系统
+   - 场景的 event → 伏笔的引入/推进/回收章节
+
+5. 上下文引擎
+   - 当前章节的场景切片 → 注入prompt
+   - 帮助LLM理解场景结构
