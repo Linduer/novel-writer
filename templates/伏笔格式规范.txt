@@ -1,0 +1,315 @@
+# ============================================================
+# 伏笔格式规范 v1.0
+# 管理伏笔的埋设、推进、回收
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、伏笔的定义
+# ════════════════════════════════════════════════════════════
+
+伏笔 = 在A章节埋下线索，在B章节揭晓答案。
+
+关键要素：
+  1. 埋设（introduce）：在哪个章节埋下
+  2. 推进（advance）：中间章节如何加深印象
+  3. 回收（resolve）：在哪个章节揭晓
+
+# ════════════════════════════════════════════════════════════
+#  二、字段分级
+# ════════════════════════════════════════════════════════════
+
+## Tier1 基础性（绝对不可偏离）
+
+  id                    伏笔ID（fsNNN格式，唯一标识）
+  description           伏笔内容（一句话描述）
+  introduced_in         埋设章节（chNNNN格式）
+  related_characters    关联角色列表
+  type                  伏笔类型（见取值表）
+  importance            重要性（S/A/B/C）
+
+## Tier2 可演变（随剧情自然变化）
+
+  resolved_in           回收章节（chNNNN格式，可选）
+  status                状态（active/resolved）
+  advance_chapters      推进章节列表（中间加深印象的章节）
+  hints                 提示信息（中间章节给读者的暗示）
+
+## Tier3 可偏离（根据行文情况调整）
+
+  hint_text             具体提示文本（每章可不同）
+  resolution_text       具体回收文本（每章可不同）
+
+
+# ════════════════════════════════════════════════════════════
+#  三、取值表
+# ════════════════════════════════════════════════════════════
+
+## type（伏笔类型）
+
+| 值         | 说明           | 示例                        |
+|------------|----------------|-----------------------------|
+| mystery    | 谜团/秘密      | 洪水真账、中枢身份           |
+| character  | 角色伏笔       | 三姆的忠诚、千黛的身世       |
+| plot       | 剧情伏笔       | 水位刻度、繁荣悖论           |
+| item       | 物品伏笔       | 招牌夹层、甘霖瓶             |
+| world      | 世界观伏笔     | 归墟、五钥、信仰值           |
+| emotion    | 情感伏笔       | 程霜的公文、霍青澜的"图什么" |
+| twist      | 反转伏笔       | 敖涸归队、沧溟身份           |
+| rule       | 规则伏笔       | 囤水者皆溺亡、检票闸机       |
+
+## importance（重要性）
+
+| 等级 | 说明 | 间隔要求 | 示例 |
+|------|------|----------|------|
+| S    | 全书核心伏笔 | 必须回收 | 洪水真账、中枢坦白 |
+| A    | 卷级重要伏笔 | 100章内回收 | 三姆觉醒、程霜倒戈 |
+| B    | 章节级伏笔 | 30章内回收 | 水老大、设施首秀 |
+| C    | 氛围级伏笔 | 可不回收 | 日常细节、背景设定 |
+
+## status（伏笔状态）
+
+| 值        | 说明           |
+|-----------|----------------|
+| active    | 已埋设，待回收 |
+| advance   | 已推进         |
+| resolved  | 已回收         |
+| abandoned | 已放弃（不回收）|
+
+## 回收间隔规则
+
+| 伏笔等级 | 最大回收间隔 | 说明 |
+|----------|--------------|------|
+| S级 | 全书 | 核心伏笔跨全书 |
+| A级 | 100章 | 卷级伏笔 |
+| B级 | 30章 | 章节级伏笔 |
+| C级 | 不限 | 可以不回收 |
+
+
+# ════════════════════════════════════════════════════════════
+#  四、字段说明
+# ════════════════════════════════════════════════════════════
+
+## 基础信息
+- id:                 伏笔ID（fsNNN格式）
+- description:        伏笔内容（一句话描述）
+- introduced_in:      埋设章节（chNNNN格式）
+- related_characters: 关联角色列表
+- type:               伏笔类型（见取值表）
+- importance:         重要性（S/A/B/C）
+
+## 状态追踪
+- resolved_in:        回收章节（可选）
+- status:             当前状态
+- advance_chapters:   推进章节列表
+- hints:              提示信息
+
+## 文本内容
+- hint_text:          具体提示文本
+- resolution_text:    具体回收文本
+
+
+# ════════════════════════════════════════════════════════════
+#  五、示例
+# ════════════════════════════════════════════════════════════
+
+# ── 示例1：S级核心伏笔 ──
+
+- id: fs001
+  description: "中枢开机第一句是'欢迎回来，园长'。沈浮是头一回上这条船——'回来'二字没人较真。"
+  introduced_in: ch002
+  related_characters: ["沈浮", "乐园中枢"]
+  type: mystery
+  importance: S
+  status: resolved
+  advance_chapters:
+    - chapter: ch544
+      hint: "园长=池正的译名"
+    - chapter: ch838
+      hint: "中枢坦白"
+  resolved_in: ch544-549; ch847; ch960
+  resolution_text: "园长=池正的译名，等的是看池人；重构后原句复现；终章原句——园子、园长、它，都真的回来了"
+
+# ── 示例2：A级角色伏笔 ──
+
+- id: fs008
+  description: "登录福利白送传说级英灵。末世了，什么运营逻辑还在发新手大礼。"
+  introduced_in: ch008-010
+  related_characters: ["大嘴三姆", "乐园中枢"]
+  type: character
+  importance: A
+  status: resolved
+  advance_chapters:
+    - chapter: ch070
+      hint: "三姆的忠诚大得没道理"
+  resolved_in: ch179-180
+  resolution_text: "不是福利，是召回——卫队长排了三千年的班"
+
+# ── 示例3：B级物品伏笔 ──
+
+- id: fs002
+  description: "招牌夹层里压着爷爷的照片：沧浪池。遗言'看好池子'。泳池早拆了，照片随身带了三年。"
+  introduced_in: ch002-003
+  related_characters: ["沈浮", "爷爷"]
+  type: item
+  importance: A
+  status: resolved
+  advance_chapters:
+    - chapter: ch547
+      hint: "名牒槽+古誓"
+    - chapter: ch957
+      hint: "招牌归位"
+  resolved_in: ch547-548; ch957
+  resolution_text: "家训是官誓的讹传；招牌归位，夹层四件信物"
+
+# ── 示例4：B级剧情伏笔 ──
+
+- id: fs010
+  description: "水老大的水价牌：一桶水一条命。"
+  introduced_in: ch031-040
+  related_characters: ["水老大"]
+  type: plot
+  importance: B
+  status: resolved
+  resolved_in: ch095-096
+  resolution_text: "按死在儿童戏水池三十公分的水里——'囤水者皆溺亡'首次兑现"
+
+# ── 示例5：A级世界观伏笔 ──
+
+- id: fs004
+  description: "洪水吞没大陆，水位还在涨。满海了，往哪涨。"
+  introduced_in: ch001
+  related_characters: ["沈浮", "乐园中枢"]
+  type: world
+  importance: S
+  status: resolved
+  advance_chapters:
+    - chapter: ch382
+      hint: "水位第四级"
+    - chapter: ch759
+      hint: "退潮开始"
+  resolved_in: ch673-676; ch702-705
+  resolution_text: "'往哪退'；三链并轨：水位=围城进度"
+
+# ── 示例6：A级情感伏笔 ──
+
+- id: fs022
+  description: "霍青澜的'图什么'：问了七百多章的问题。"
+  introduced_in: ch216-218
+  related_characters: ["霍青澜"]
+  type: emotion
+  importance: A
+  status: resolved
+  advance_chapters:
+    - chapter: ch500
+      hint: "还在问图什么"
+    - chapter: ch700
+      hint: "问了七百多章"
+  resolved_in: ch906
+  resolution_text: "终战前夜再问一次'图什么'，替全书保管这个问题"
+
+# ── 示例7：C级氛围伏笔 ──
+
+- id: fs015
+  description: "老潜水员规矩：见墨回头。"
+  introduced_in: 卷一闲笔
+  related_characters: ["沈浮", "温大夫", "韩嫂"]
+  type: rule
+  importance: C
+  status: resolved
+  resolved_in: ch763-768; ch915-917
+  resolution_text: "黑潮可解、可消化；'全海无处回头'落在战场现实"
+
+# ── 示例8：待回收的S级伏笔 ──
+
+- id: fs090
+  description: "水花的命名：死于它前身唯一没学会的词，活成它学会的第一个词。"
+  introduced_in: ch938
+  related_characters: ["水花", "渊"]
+  type: mystery
+  importance: S
+  status: active
+  resolved_in: null
+  hints:
+    - "水花=渊的终局形态"
+    - "残滓之死由它的'开场水花'完成"
+
+
+# ════════════════════════════════════════════════════════════
+#  六、伏笔管理规则
+# ════════════════════════════════════════════════════════════
+
+## 埋设规则
+
+1. **S级伏笔**：每卷至少埋设1个
+2. **A级伏笔**：每10章至少埋设1个
+3. **B级伏笔**：每5章至少埋设1个
+4. **C级伏笔**：不限
+
+## 推进规则
+
+1. **S级伏笔**：每50章至少推进1次
+2. **A级伏笔**：每30章至少推进1次
+3. **B级伏笔**：每15章至少推进1次
+4. **C级伏笔**：可不推进
+
+## 回收规则
+
+1. **S级伏笔**：必须回收，跨全书
+2. **A级伏笔**：必须回收，100章内
+3. **B级伏笔**：建议回收，30章内
+4. **C级伏笔**：可不回收
+
+## 超时预警
+
+| 伏笔等级 | 超时条件 | 预警动作 |
+|----------|----------|----------|
+| S级 | 200章未推进 | 警告 |
+| A级 | 100章未推进 | 警告 |
+| B级 | 50章未推进 | 提醒 |
+| C级 | 不限 | 无 |
+
+
+# ════════════════════════════════════════════════════════════
+#  七、与其他系统的关联
+# ════════════════════════════════════════════════════════════
+
+1. 大纲
+   - 大纲的 foreshadows → 伏笔的引入章节
+   - 大纲的 key_events → 伏笔的回收章节
+
+2. 细纲
+   - 细纲的 foreshadows → 伏笔的推进/回收动作
+   - 细纲的 foreshadow_id → 伏笔的 ID
+
+3. 时间线
+   - 伏笔的 introduced_in → 时间线的时间点
+   - 伏笔的 resolved_in → 时间线的时间点
+
+4. 角色档案
+   - 伏笔的 related_characters → 角色的 secrets
+   - 伏笔的 resolved_in → 角色的 growth_arc
+
+5. 章节记忆
+   - 每章的 memory.json 中的 foreshadowing字段 → 伏笔的推进记录
+
+6. 上下文引擎
+   - 当前章节的活跃伏笔 → 注入prompt
+   - 帮助LLM推进伏笔
+
+7. 爽点审查
+   - 伏笔的回收 → 爽点的揭秘类型
+   - 伏笔的推进 → 爽点的铺垫
+
+
+# ════════════════════════════════════════════════════════════
+#  八、查询命令
+# ════════════════════════════════════════════════════════════
+
+python main.py foreshadows                           # 查看所有伏笔
+python main.py foreshadows --status active           # 查看活跃伏笔
+python main.py foreshadows --status resolved         # 查看已回收伏笔
+python main.py foreshadows --type mystery            # 查看特定类型伏笔
+python main.py foreshadows --importance S            # 查看特定重要性伏笔
+python main.py foreshadows --check                   # 检查伏笔超时
+python main.py foreshadows --chapter ch0402          # 查看第402章涉及的伏笔
+python main.py foreshadows --character 沈浮          # 查看特定角色的伏笔
