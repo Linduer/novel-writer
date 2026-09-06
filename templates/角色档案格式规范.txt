@@ -39,6 +39,9 @@
   key_relationships       关系类型变化
   secrets                 秘密可能被揭晓
   status                  在世状态（active→dead）
+  exit_chapter            下线章节（退场/离开/死亡）
+  exit_type               退场类型（dead/retired/banished等）
+  return_chapter          回归章节（临时下线后回来）
   growth_arc              成长弧线本身
 
 ## 第三档：可偏离（根据行文情况调整）— Tier3
@@ -90,10 +93,25 @@
 
 ## 出场规划
 - appearances:
-    first_chapter: 首次出场章节（chNNNN格式）
-    last_chapter:  最后出场章节（chNNNN格式，未定写"ch9999"）
-    status:        当前状态（active/retired/dead/unknown）
-    killable:      能不能写死（true/false）
+    first_chapter:   首次出场章节（chNNNN格式）
+    last_chapter:    最后出场章节（chNNNN格式，未定写"ch9999"）
+    status:          当前状态（active/retired/dead/unknown）
+    killable:        能不能写死（true/false）
+    exit_chapter:    下线章节（退场/离开/死亡的章节）
+    exit_type:       退场类型（见取值表）
+    return_chapter:  回归章节（临时下线后回来的章节，可选）
+
+## exit_type 取值表
+
+| 值          | 说明             | 示例                    |
+|-------------|------------------|-------------------------|
+| dead        | 死亡             | 水老大ch095             |
+| retired     | 退场（不死）     | 敖衍退位                |
+| captured    | 被抓/被困        | 敖沉囚居                |
+| banished    | 放逐/叛逃        | 白湮叛逃                |
+| disappeared | 失踪             | 沧溟沉海                |
+| temp_exit   | 临时下线（会回） | 某角色暂时离开          |
+| ongoing     | 未下线（活跃）   | 主角、核心配角          |
 
 ## 成长弧线
 - growth_arc:      分阶段状态变化（数组，每项包含）
@@ -161,6 +179,51 @@
 ## 选填字段（有则填，没有写"无"）
   origin, appearance, emotional_baseline, personality_arc,
   growth_arc, key_relationships, secrets, signature_items
+
+
+# ════════════════════════════════════════════════════════════
+#  五、角色分层档案（按出场频率决定详细度）
+# ════════════════════════════════════════════════════════════
+
+角色档案不是所有人都写一样多。按出场频率分四档：
+
+## Tier1 完整档案（主角+核心配角）
+  - 适用：主角、女主、核心反派、系统/金手指
+  - 要求：全部字段都要填
+  - 示例：沈浮、乐园中枢、大嘴三姆
+
+## Tier2 标准档案（多卷出场的重要角色）
+  - 适用：多卷出场的配角、重要反派
+  - 要求：必填字段 + 关键选填（key_relationships、constraints）
+  - 示例：小丑贾克、蓝博、姜横
+
+## Tier3 简略档案（单卷/单章出场）
+  - 适用：单卷客串、一次性反派、工具人
+  - 要求：只写必填字段（name、role_type、role_function、identity、constraints）
+  - 示例：水老大、卫崇仓、厉戈
+
+## Tier4 一行档案（背景人物）
+  - 适用：极少出场、世界背景的一部分
+  - 要求：name + role_type + role_function 一行搞定
+  - 示例：韩嫂、白经理、柳半仙
+
+# ── 分层速查表 ──
+
+| 档  | 角色类型           | 字段数 | Token占用 | 示例           |
+|-----|-------------------|--------|-----------|----------------|
+| T1  | 主角/女主/核心反派 | 全部   | ~800-1200 | 沈浮、中枢     |
+| T2  | 多卷配角          | 8-10个 | ~400-600  | 贾克、蓝博     |
+| T3  | 单卷/单章客串     | 5-6个  | ~150-250  | 水老大、厉戈   |
+| T4  | 背景人物          | 3个    | ~30-50    | 韩嫂、白经理   |
+
+# ── 判断角色该归哪档 ──
+
+1. 这个角色出场超过3卷？→ T1或T2
+2. 这个角色有独立的growth_arc？→ T1或T2
+3. 这个角色有key_relationships需要追踪？→ T1或T2
+4. 这个角色只在某一卷出现？→ T3
+5. 这个角色只在某一章出现？→ T3或T4
+6. 这个角色是背景板（如"食堂主厨"）？→ T4
 
 
 # ════════════════════════════════════════════════════════════
