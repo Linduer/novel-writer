@@ -180,7 +180,7 @@ class ConsistencyChecker:
         
         # 标记解决的伏笔
         for fs_id in resolved_in_chapter:
-            self.foreshadowing_manager.resolve_foreshadowing(project_name, fs_id, f"ch{chapter:03d}")
+            self.foreshadowing_manager.resolve_foreshadowing(project_name, fs_id, f"ch{chapter:04d}")
             issues.append(f"伏笔 {fs_id} 已在本章解决")
         
         return issues

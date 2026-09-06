@@ -74,10 +74,11 @@ class ForeshadowingManager:
         return foreshadowing_map
     
     def _load_from_txt(self, txt_path: Path) -> Dict[str, Foreshadowing]:
-        """从旧格式txt文件加载伏笔"""
+        """从旧格式txt文件加载伏笔（自动修正ID为fsXXX格式）"""
         import yaml
         
         foreshadowing_map = {}
+        auto_counter = 0  # 自动编号计数器
         
         try:
             with open(txt_path, 'r', encoding='utf-8') as f:
@@ -96,8 +97,10 @@ class ForeshadowingManager:
                     continue
                 
                 fs_id = item.get('id', '')
-                if not fs_id:
-                    continue
+                # 自动修正ID格式
+                if not fs_id or not fs_id.startswith('fs'):
+                    auto_counter += 1
+                    fs_id = f"fs{auto_counter:03d}"
                 
                 fs = Foreshadowing(
                     id=fs_id,
@@ -116,8 +119,10 @@ class ForeshadowingManager:
                         continue
                     
                     fs_id = item.get('id', '')
-                    if not fs_id:
-                        continue
+                    # 自动修正ID格式
+                    if not fs_id or not fs_id.startswith('fs'):
+                        auto_counter += 1
+                        fs_id = f"fs{auto_counter:03d}"
                     
                     fs = Foreshadowing(
                         id=fs_id,
@@ -182,9 +187,20 @@ class ForeshadowingManager:
             json.dump(data, f, ensure_ascii=False, indent=2)
     
     def add_foreshadowing(self, project_name: str, foreshadowing: Foreshadowing) -> bool:
-        """添加新伏笔"""
+        """添加新伏笔（自动生成 fsXXX 格式ID）"""
         try:
             foreshadowing_map = self.load_foreshadowing(project_name)
+            # 自动生成 fs001, fs002 格式ID
+            if not foreshadowing.id or not foreshadowing.id.startswith('fs'):
+                max_num = 0
+                for existing_id in foreshadowing_map.keys():
+                    if existing_id.startswith('fs'):
+                        try:
+                            num = int(existing_id[2:])
+                            max_num = max(max_num, num)
+                        except ValueError:
+                            pass
+                foreshadowing.id = f"fs{max_num + 1:03d}"
             foreshadowing_map[foreshadowing.id] = foreshadowing
             self.save_foreshadowing(project_name, foreshadowing_map)
             return True

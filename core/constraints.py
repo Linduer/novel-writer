@@ -173,7 +173,7 @@ class ConstraintManager:
             if existing.category == category and existing.content[:20] == prefix:
                 return existing
         c = Constraint(
-            id=f"t{tier.value}_{category[:3]}_{len(constraints)+1:04d}",
+            id=f"c{len(constraints)+1:03d}",
             tier=tier.value,
             category=category,
             content=content,

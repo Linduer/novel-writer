@@ -182,9 +182,8 @@ def write(chapter, volume, name):
             continue
         if hint.get('status') == 'new':
             from core.foreshadowing import Foreshadowing, ForeshadowingStatus
-            fs_id = f"ch{chapter:04d}_{len(hint_text[:10])}"
             new_fs = Foreshadowing(
-                id=fs_id,
+                id="",  # 自动生成 fsXXX 格式
                 introduced_in=f"ch{chapter:04d}",
                 description=hint_text,
                 related_characters=characters_in_chapter[:5],
@@ -360,9 +359,8 @@ def save(chapter, yes):
             continue
         if hint.get('status') == 'new':
             from core.foreshadowing import Foreshadowing, ForeshadowingStatus
-            fs_id = f"ch{chapter:04d}_{len(hint_text[:10])}"
             new_fs = Foreshadowing(
-                id=fs_id,
+                id="",  # 自动生成 fsXXX 格式
                 introduced_in=f"ch{chapter:04d}",
                 description=hint_text,
                 related_characters=characters_in_chapter[:5],
