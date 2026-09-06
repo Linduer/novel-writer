@@ -840,5 +840,92 @@ def constraints_check(chapter):
                   f"Tier3={stats.get('tier3',0)}[/dim]")
 
 
+# ═══════════════════════════════════════════════════════════════
+#  check — 一致性检查
+# ═══════════════════════════════════════════════════════════════
+
+@cli.command('check')
+@click.argument('chapter', type=int, required=False)
+@click.option('--all', 'check_all', is_flag=True, help='检查所有章节')
+@click.option('--fix', 'auto_fix', is_flag=True, help='尝试自动修复')
+@click.option('--report', 'show_report', is_flag=True, help='生成检查报告')
+@click.option('--foreshadowing', 'check_fs', is_flag=True, help='只检查伏笔一致性')
+@click.option('--character', 'check_char', help='只检查特定角色一致性')
+def check(chapter, check_all, auto_fix, show_report, check_fs, check_char):
+    """检查章节一致性"""
+    config = load_config()
+    m = _init_managers(config)
+
+    if check_all:
+        # 检查所有章节
+        console.print(Panel("[bold yellow]检查所有章节一致性[/bold yellow]"))
+        chapters_dir = Path(config['storage']['data_dir'].replace('{project}', m['project_name'])) / 'chapters'
+        if not chapters_dir.exists():
+            console.print("[red]错误：未找到chapters目录[/red]")
+            return
+
+        total_issues = 0
+        for ch_dir in sorted(chapters_dir.iterdir()):
+            if ch_dir.is_dir() and ch_dir.name.startswith('ch'):
+                try:
+                    ch_num = int(ch_dir.name[2:])
+                    draft_file = ch_dir / 'draft.txt'
+                    if draft_file.exists():
+                        draft = draft_file.read_text(encoding='utf-8')
+                        result = m['checker'].check_chapter(ch_num, draft, {})
+                        if not result['passed']:
+                            total_issues += result['summary']['errors']
+                            console.print(f"[red]✗ 第{ch_num}章：{result['summary']['errors']}个错误[/red]")
+                        else:
+                            console.print(f"[green]✓ 第{ch_num}章：通过[/green]")
+                except ValueError:
+                    continue
+
+        console.print(f"\n[bold]总计：{total_issues}个错误[/bold]")
+
+    elif chapter:
+        # 检查单章
+        console.print(Panel(f"[bold yellow]一致性检查：第{chapter}章[/bold yellow]"))
+
+        # 读取草稿
+        draft = m['storage'].load_chapter(chapter, 'draft')
+        if not draft:
+            console.print(f"[red]错误：未找到第{chapter}章草稿[/red]")
+            return
+
+        # 执行检查
+        if check_fs:
+            # 只检查伏笔
+            result = m['checker'].check_foreshadowing_status(chapter, {})
+            console.print(f"伏笔总数：{result['foreshadowing_count']}")
+            console.print(f"已解决：{result['resolved_count']}")
+            console.print(f"待解决：{result['pending_count']}")
+            if result['unresolved_old']:
+                console.print("\n[yellow]超时未解决伏笔：[/yellow]")
+                for fs in result['unresolved_old']:
+                    console.print(f"  - {fs['id']}: {fs['description'][:50]}... (等待{fs['chapters_pending']}章)")
+        else:
+            # 完整检查
+            result = m['checker'].check_chapter(chapter, draft, {})
+
+            # 输出报告
+            report = m['checker'].generate_report(chapter, result)
+            console.print(report)
+
+            # 如果有错误且启用了自动修复
+            if auto_fix and not result['passed']:
+                console.print("\n[yellow]尝试自动修复...[/yellow]")
+                fixed = m['checker'].auto_fix(draft, result['issues'])
+                if fixed != draft:
+                    console.print("[green]✓ 已自动修复[/green]")
+                    # 保存修复后的内容
+                    m['storage'].save_chapter(chapter, fixed, 'draft')
+                else:
+                    console.print("[yellow]⚠ 无法自动修复，需要手动修改[/yellow]")
+
+    else:
+        console.print("[red]请指定章节编号或使用 --all 检查所有章节[/red]")
+
+
 if __name__ == '__main__':
     cli()
