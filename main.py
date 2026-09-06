@@ -112,6 +112,8 @@ def write(chapter, volume, name):
 
     # 1. 构建上下文
     console.print("[cyan]构建写作上下文...[/cyan]")
+    # 首次使用时初始化预置约束
+    m['constraints'].init_preset_constraints()
     project_data = m['storage'].load_project(pname)
     ctx = m['context'].build_writing_context(project_data, chapter, volume)
     token_report = m['context'].get_token_usage_report(ctx)
@@ -194,9 +196,9 @@ def write(chapter, volume, name):
             if matched:
                 m['foreshadow'].resolve_foreshadowing(pname, matched.id, f"ch{chapter:04d}")
 
-    # 同步Tier1约束（从已写定内容提取）
+    # 同步可演变约束（从已写内容提取）
     console.print("[cyan]同步约束...[/cyan]")
-    m['constraints'].sync_from_written_chapters(m['storage'])
+    m['constraints'].sync_evolvable_from_chapters(m['storage'])
 
     # 更新项目统计
     m['storage'].update_project_stats(pname)
@@ -372,10 +374,10 @@ def save(chapter, yes):
             if matched:
                 m['foreshadow'].resolve_foreshadowing(pname, matched.id, f"ch{chapter:04d}")
 
-    # 同步Tier1约束 + 归档Tier3细纲
-    m['constraints'].sync_from_written_chapters(m['storage'])
-    m['constraints'].archive_chapter_constraints(chapter)
-    console.print("[green]✓[/green] 约束已同步（Tier1已写定 + Tier3已归档）")
+    # 同步可演变约束 + 归档可偏离约束
+    m['constraints'].sync_evolvable_from_chapters(m['storage'])
+    m['constraints'].archive_chapter_flex(chapter)
+    console.print("[green]✓[/green] 约束已同步（Tier2可演变 + Tier3已归档）")
 
     m['storage'].update_project_stats(pname)
 
@@ -741,13 +743,13 @@ def constraints(tier):
     config = load_config()
     m = _init_managers(config)
 
-    tier_map = {'1': Tier.IMMUTABLE, '2': Tier.OUTLINE, '3': Tier.CHAPTER}
-    tier_labels = {Tier.IMMUTABLE: "第一档·已写定（绝对不可违背）",
-                   Tier.OUTLINE:   "第二档·大纲（原则上不可违背）",
-                   Tier.CHAPTER:   "第三档·细纲（可适度偏离）"}
+    tier_map = {'1': Tier.FOUNDATION, '2': Tier.EVOLVABLE, '3': Tier.FLEXIBLE}
+    tier_labels = {Tier.FOUNDATION: "第一档·基础性（绝对不可偏离）",
+                   Tier.EVOLVABLE:  "第二档·可演变（随行文自然变化）",
+                   Tier.FLEXIBLE:   "第三档·可偏离（根据行文情况调整）"}
 
     if tier == 'all':
-        tiers_to_show = [Tier.IMMUTABLE, Tier.OUTLINE, Tier.CHAPTER]
+        tiers_to_show = [Tier.FOUNDATION, Tier.EVOLVABLE, Tier.FLEXIBLE]
     else:
         tiers_to_show = [tier_map[tier]]
 
@@ -780,16 +782,16 @@ def constraints_sync(source):
     pname = m['project_name']
 
     if source in ('chapters', 'both'):
-        console.print("[cyan]从已写章节同步Tier1...[/cyan]")
-        m['constraints'].sync_from_written_chapters(m['storage'])
-        console.print("[green]✓[/green] Tier1已同步")
+        console.print("[cyan]从已写章节同步Tier2可演变约束...[/cyan]")
+        m['constraints'].sync_evolvable_from_chapters(m['storage'])
+        console.print("[green]✓[/green] Tier2已同步")
 
     if source in ('outline', 'both'):
         console.print("[cyan]从大纲同步Tier2...[/cyan]")
         project_data = m['storage'].load_project(pname)
         for outline in project_data.get('outline', []):
             m['constraints'].sync_from_outline(outline['content'], source=outline['filename'])
-        console.print("[green]✓[/green] Tier2已同步")
+        console.print("[green]✓[/green] Tier2大纲约束已同步")
 
     stats = m['constraints'].get_stats()
     console.print(f"\n当前约束：Tier1={stats.get('tier1',0)} | "
@@ -807,7 +809,7 @@ def constraints_add(tier, category, content):
     """手动添加约束"""
     config = load_config()
     m = _init_managers(config)
-    tier_map = {'1': Tier.IMMUTABLE, '2': Tier.OUTLINE, '3': Tier.CHAPTER}
+    tier_map = {'1': Tier.FOUNDATION, '2': Tier.EVOLVABLE, '3': Tier.FLEXIBLE}
     c = m['constraints'].add(tier_map[tier], category, content, source="manual", locked=True)
     console.print(f"[green]✓[/green] 已添加约束：{c.id} [{c.category}] {c.content[:50]}...")
 

@@ -149,12 +149,12 @@ class ContextEngine:
         context['transition_text'] = transition_text
         context['transition_tokens'] = estimate_tokens(transition_text)
         
-        # 2.10 三级约束体系（已写定 > 大纲 > 细纲）
+        # 2.10 三级约束体系（基础 > 可演变 > 可偏离）
         constraints_text = self.constraint_manager.format_for_prompt(
             max_tokens_per_tier={
-                Tier.IMMUTABLE: int(budget['constraints'] * 0.5),   # 50%给Tier1
-                Tier.OUTLINE:   int(budget['constraints'] * 0.3),   # 30%给Tier2
-                Tier.CHAPTER:   int(budget['constraints'] * 0.2),   # 20%给Tier3
+                Tier.FOUNDATION: int(budget['constraints'] * 0.50),  # 50%给基础约束
+                Tier.EVOLVABLE:  int(budget['constraints'] * 0.30),  # 30%给可演变约束
+                Tier.FLEXIBLE:   int(budget['constraints'] * 0.20),  # 20%给可偏离约束
             }
         )
         context['constraints_text'] = constraints_text
