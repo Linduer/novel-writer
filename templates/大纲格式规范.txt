@@ -1,0 +1,350 @@
+# ============================================================
+# 大纲格式规范 v1.0
+# 整个故事的宏观规划，不是每章的细节
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、大纲 vs 细纲的区别
+# ════════════════════════════════════════════════════════════
+
+大纲（本规范）：
+  - 整个故事的宏观规划
+  - 每卷的核心目标和转折
+  - 主角的成长弧线
+  - 主要伏笔的布局
+  - 不涉及具体章节细节
+
+细纲（另一份规范）：
+  - 每章的具体内容
+  - 每章的场景安排
+  - 每章的爽点设计
+  - 每章的生成prompt
+
+简单说：
+  大纲 = 这个故事要讲什么
+  细纲 = 这一章要写什么
+
+# ════════════════════════════════════════════════════════════
+#  二、字段分级
+# ════════════════════════════════════════════════════════════
+
+## Tier1 基础性（绝对不可偏离）
+
+  title                 故事标题
+  genre                 类型（玄幻/都市/修仙/etc）
+  total_volumes         总卷数
+  total_chapters        总章数
+  core_theme            核心主题（一句话）
+  protagonist           主角名称
+  protagonist_goal      主角的终极目标
+  golden_finger         金手指/系统设定
+  world_setting         世界观设定
+  power_system          力量体系
+  ending                结局走向
+
+## Tier2 可演变（随剧情自然变化）
+
+  volumes               各卷规划（数组）
+    - volume_number:    卷号
+      volume_title:     卷标题
+      chapter_range:    章节范围
+      core_conflict:    核心冲突
+      core_goal:        本卷目标
+      key_events:       关键事件
+      new_characters:   新增角色
+      new_locations:    新增地点
+      foreshadows:      本卷伏笔
+      satisfaction:     本卷爽点
+
+  main_plot_lines       主线剧情（数组）
+  sub_plot_lines        支线剧情（数组）
+
+## Tier3 可偏离（根据行文情况调整）
+
+  notes                 备注
+  style_notes           风格说明
+
+
+# ════════════════════════════════════════════════════════════
+#  三、字段说明
+# ════════════════════════════════════════════════════════════
+
+## 基础信息
+- title:              故事标题
+- genre:              类型
+- total_volumes:      总卷数
+- total_chapters:     总章数
+- core_theme:         核心主题（一句话）
+- protagonist:        主角名称
+- protagonist_goal:   主角的终极目标
+- golden_finger:      金手指/系统设定
+- world_setting:      世界观设定
+- power_system:       力量体系
+- ending:             结局走向
+
+## 卷级规划
+- volumes:            各卷规划（数组）
+  - volume_number:    卷号
+    volume_title:     卷标题
+    chapter_range:    章节范围（chXXX-chXXX）
+    core_conflict:    核心冲突（一句话）
+    core_goal:        本卷目标（一句话）
+    key_events:       关键事件（数组）
+    new_characters:   新增角色（数组）
+    new_locations:    新增地点（数组）
+    foreshadows:      本卷伏笔（数组）
+    satisfaction:     本卷爽点（数组）
+
+## 剧情线
+- main_plot_lines:    主线剧情（数组）
+- sub_plot_lines:     支线剧情（数组）
+
+## 元信息
+- notes:              备注
+- style_notes:        风格说明
+
+
+# ════════════════════════════════════════════════════════════
+# 四、示例
+# ════════════════════════════════════════════════════════════
+
+title: 全民海上求生：我的乐园会打捞神仙
+genre: 末日求生+乐园经营+东方玄幻
+total_volumes: 10
+total_chapters: 960
+core_theme: "乐园不只是建筑，是一群人选择在一起"
+protagonist: 沈浮
+protagonist_goal: "从负债八百万到免票开业"
+golden_finger: 打捞天赋+羁绊光环+建造天赋
+world_setting: "末日洪水世界，乐园=方舟，信仰值=货币"
+power_system: "驭水六境+英灵系统+五钥体系"
+ending: "搁浅开业，免票，新大陆"
+
+# ── 卷级规划 ──
+
+volumes:
+  - volume_number: 1
+    volume_title: "开业洪水"
+    chapter_range: "ch001-096"
+    core_conflict: "乐园刚开业就被洪水毁了，沈浮要重建"
+    core_goal: "在末日里重新开业"
+    key_events:
+      - "ch001: 洪水来袭，乐园被毁"
+      - "ch008: 打捞大嘴三姆"
+      - "ch095: 满潮夜，造浪池首秀"
+    new_characters: ["大嘴三姆", "彪哥", "白经理"]
+    new_locations: ["近海废墟", "疯狂水世界原址"]
+    foreshadows:
+      - "fs001: 招牌夹层照片"
+      - "fs002: 洪水之夜拆招牌的原因"
+    satisfaction:
+      - "满潮夜一浪拍碎黑帮船队"
+      - "水老大按死在三十公分深的水里"
+
+  - volume_number: 2
+    volume_title: "义盟风云"
+    chapter_range: "ch097-192"
+    core_conflict: "义盟要查封乐园，程霜倒戈"
+    core_goal: "获得义盟认可，通商"
+    key_events:
+      - "ch097: 程霜首次出场"
+      - "ch130: 程霜倒戈"
+      - "ch179: 三姆三星觉醒"
+    new_characters: ["程霜", "万舟", "卫崇仓"]
+    new_locations: ["千帆海域", "义盟首府"]
+    foreshadows:
+      - "fs010: 程霜的倒戈伏笔"
+      - "fs011: 三姆的卫队长身份"
+    satisfaction:
+      - "程霜倒戈"
+      - "三姆三星觉醒"
+
+  - volume_number: 3
+    volume_title: "黑鲨之牙"
+    chapter_range: "ch193-288"
+    core_conflict: "掠夺王庭来袭，霍青澜倒戈"
+    core_goal: "打败黑鲨王，获得编制"
+    key_events:
+      - "ch193: 掠夺王庭首次出场"
+      - "ch249: 黑鲨王被渡走"
+      - "ch285: 大喇叭首秀"
+    new_characters: ["霍青澜", "黑鲨王"]
+    new_locations: ["黑市环礁", "掠夺王庭"]
+    foreshadows:
+      - "fs020: 王庭三代同梦"
+      - "fs022: '图什么'记了七百多章"
+    satisfaction:
+      - "黑鲨王被渡走"
+      - "大喇叭漩涡吞舰"
+
+  - volume_number: 4
+    volume_title: "沉船坟场"
+    chapter_range: "ch289-384"
+    core_conflict: "风暴走廊的亡灵船长，千黛身世揭晓"
+    core_goal: "穿越风暴走廊，到达沉没仙城"
+    key_events:
+      - "ch289: 风暴走廊首次出现"
+      - "ch373: 千黛三星觉醒"
+      - "ch382: 水位第四级"
+    new_characters: ["雾隐千黛", "亡灵船长"]
+    new_locations: ["风暴走廊", "沉船坟场"]
+    foreshadows:
+      - "fs030: 千黛的王座暗探身份"
+    satisfaction:
+      - "千黛三星觉醒"
+      - "亡灵船长超度"
+
+  - volume_number: 5
+    volume_title: "仙城遗迹"
+    chapter_range: "ch385-480"
+    core_conflict: "沉没仙城的秘密，英灵军团成军"
+    core_goal: "获得玉玺，组建军团"
+    key_events:
+      - "ch385: 沉没仙城首次出现"
+      - "ch402: 沈浮突破江河境"
+      - "ch430: 蓝博三星觉醒"
+    new_characters: ["姜横", "蓝博", "姗姗"]
+    new_locations: ["沉没仙城", "仙城守军营地"]
+    foreshadows:
+      - "fs040: 玉玺的来历"
+      - "fs041: 英灵军团的使命"
+    satisfaction:
+      - "玉玺认主"
+      - "英灵军团成军"
+
+  - volume_number: 6
+    volume_title: "双钥之火"
+    chapter_range: "ch481-576"
+    core_conflict: "沧澜遗族的阴谋，双钥合一"
+    core_goal: "点火方舟，获得第三钥"
+    key_events:
+      - "ch481: 沧澜海沟首次出现"
+      - "ch546: 姗姗身世揭晓"
+      - "ch555: 方舟点火夜"
+    new_characters: ["姗姗", "敖衍", "敖泓"]
+    new_locations: ["沧澜海沟", "人鱼故国"]
+    foreshadows:
+      - "fs050: 双钥合一的代价"
+      - "fs051: 方舟点火的条件"
+    satisfaction:
+      - "双钥合一"
+      - "方舟点火"
+      - "沈浮突破湖泽境"
+
+  - volume_number: 7
+    volume_title: "灯塔之光"
+    chapter_range: "ch577-672"
+    core_conflict: "天工阁的检测令，公输瑶倒戈"
+    core_goal: "获得灯塔火种，证明乐园不是伪科学"
+    key_events:
+      - "ch577: 移动灯塔首次出现"
+      - "ch592: 灯塔火种认主"
+      - "ch621: 第五钥揭晓"
+    new_characters: ["公输瑶", "公输衡", "章铁规"]
+    new_locations: ["移动灯塔", "天工阁"]
+    foreshadows:
+      - "fs060: 灯塔火种的真相"
+      - "fs061: 第五钥是人"
+    satisfaction:
+      - "灯塔火种认主"
+      - "章铁规共存论"
+
+  - volume_number: 8
+    volume_title: "冰洋圣域"
+    chapter_range: "ch673-768"
+    core_conflict: "洪水真账揭晓，白湮身世"
+    core_goal: "找到洪水真相，白湮叛逃"
+    key_events:
+      - "ch673: 冰洋圣域首次出现"
+      - "ch702-705: 洪水真账揭晓"
+      - "ch759-762: 水位开始退潮"
+    new_characters: ["白湮", "小烛"]
+    new_locations: ["冰洋圣域", "极夜海"]
+    foreshadows:
+      - "fs070: 洪水真账"
+      - "fs071: 白湮的身世"
+    satisfaction:
+      - "洪水真账揭晓"
+      - "白湮叛逃"
+
+  - volume_number: 9
+    volume_title: "归墟终局"
+    chapter_range: "ch769-864"
+    core_conflict: "中枢坦白，真败，退洪"
+    core_goal: "打败渊，退洪"
+    key_events:
+      - "ch769: 归墟外围首次出现"
+      - "ch838: 中枢坦白夜"
+      - "ch857: 贾克殉园"
+      - "ch864: 终战"
+    new_characters: ["敖涸（归队）"]
+    new_locations: ["归墟外围", "归墟"]
+    foreshadows:
+      - "fs080: 中枢的坦白"
+      - "fs081: 退洪的代价"
+    satisfaction:
+      - "中枢坦白"
+      - "贾克殉园"
+      - "终战胜利"
+
+  - volume_number: 10
+    volume_title: "免票开业"
+    chapter_range: "ch865-960"
+    core_conflict: "搁浅后重建，免票开业"
+    core_goal: "从搁浅到免票"
+    key_events:
+      - "ch865: 新大陆出现"
+      - "ch957: 搁浅开业"
+      - "ch959: 免票"
+    new_characters: ["水花"]
+    new_locations: ["新大陆"]
+    foreshadows:
+      - "fs090: 水花的命名"
+      - "fs091: 免票的意义"
+    satisfaction:
+      - "搁浅开业"
+      - "免票"
+      - "终局团聚"
+
+# ── 主线剧情 ──
+
+main_plot_lines:
+  - "沈浮从负债八百万到免票开业"
+  - "乐园中枢从'本中枢'到'俺'"
+  - "五钥集齐→方舟全功率→退洪"
+  - "渊的三段式死亡"
+
+# ── 支线剧情 ──
+
+sub_plot_lines:
+  - "七位女主的感情线"
+  - "英灵觉醒线"
+  - "四海政治线"
+  - "伏笔回收线"
+
+
+# ════════════════════════════════════════════════════════════
+#  五、与其他系统的关联
+# ════════════════════════════════════════════════════════════
+
+1. 细纲
+   - 大纲的 volumes → 细纲的卷级规划
+   - 大纲的 key_events → 细纲的章节安排
+
+2. 角色档案
+   - 大纲的 protagonist → 角色档案的 name
+   - 大纲的 new_characters → 角色档案的 first_appearance
+
+3. 地点档案
+   - 大纲的 new_locations → 地点档案的 first_appearance
+
+4. 伏笔系统
+   - 大纲的 foreshadows → 伏笔的引入章节
+
+5. 时间线
+   - 大纲的 volumes → 时间线的章节范围
+   - 大纲的 key_events → 时间线的关键节点
+
+6. 上下文引擎
+   - 大纲的当前卷信息 → 注入prompt
+   - 帮助LLM理解故事走向

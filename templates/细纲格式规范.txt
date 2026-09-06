@@ -1,0 +1,402 @@
+# ============================================================
+# 细纲格式规范 v1.0
+# 每章的生成prompt，指导LLM如何写这一章
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、细纲的作用
+# ════════════════════════════════════════════════════════════
+
+细纲是LLM写章节时的直接参考，包含：
+  1. 这一章要写什么（剧情目标）
+  2. 这一章有哪些人（出场角色）
+  3. 这一章发生在哪（场景地点）
+  4. 这一章的情绪走向（情绪曲线）
+  5. 这一章的爽点设计（爽点安排）
+  6. 这一章要推进的伏笔（伏笔管理）
+  7. 这一章的约束条件（注意事项）
+
+# ════════════════════════════════════════════════════════════
+#  二、字段分级
+# ════════════════════════════════════════════════════════════
+
+## Tier1 基础性（绝对不可偏离）
+
+  chapter               章节号（chNNNN格式）
+  chapter_title         章节标题
+  volume                所属卷号
+  core_event            核心事件（一句话）
+  pov                   视角人物
+  location              主要地点
+  characters            出场角色列表
+  word_count            目标字数
+
+## Tier2 可演变（随剧情自然变化）
+
+  plot_objective        剧情目标（这一章要完成什么）
+  emotion_curve         情绪曲线（开始→中间→结束）
+  tension_level         紧张度（1-10）
+  satisfaction_points   爽点设计
+  foreshadows           本章要推进的伏笔
+  character_changes     角色状态变化
+  constraints           注意事项/禁忌
+
+## Tier3 可偏离（根据行文情况调整）
+
+  scene_list            场景列表（每章的场景安排）
+  opening_hook          开篇钩子（怎么开头）
+  ending_hook           结尾钩子（怎么结尾，让读者想看下一章）
+  style_notes           风格说明
+  reference_chapters    参考章节（可以参考哪些已写章节）
+
+
+# ════════════════════════════════════════════════════════════
+#  三、字段说明
+# ════════════════════════════════════════════════════════════
+
+## 基础信息
+- chapter:            章节号（chNNNN格式）
+- chapter_title:      章节标题
+- volume:             所属卷号
+- core_event:         核心事件（一句话）
+- pov:                视角人物
+- location:           主要地点
+- characters:         出场角色列表
+- word_count:         目标字数
+
+## 剧情规划
+- plot_objective:     剧情目标（这一章要完成什么）
+- emotion_curve:      情绪曲线
+  - start:            开始时的情绪
+  - middle:           中间时的情绪
+  - end:              结束时的情绪
+- tension_level:      紧张度（1-10）
+- satisfaction_points: 爽点设计（数组）
+
+## 伏笔管理
+- foreshadows:        本章要推进的伏笔（数组）
+  - foreshadow_id:    伏笔ID（fsNNN）
+    action:           动作（introduce/advance/resolve）
+    description:      本章如何处理这个伏笔
+
+## 角色变化
+- character_changes:  角色状态变化（数组）
+  - character:        角色名
+    change:           变化描述
+    type:             变化类型（realm/ability/relationship/status/item）
+
+## 场景安排
+- scene_list:         场景列表（数组，与场景切片格式对应）
+  - order:            场景顺序
+    location:         场景地点
+    characters:       场景人物
+    event:            场景事件
+    emotion:          场景情绪
+    tension:          场景紧张度
+
+## 开篇与结尾
+- opening_hook:       开篇钩子（怎么开头，吸引读者）
+- ending_hook:        结尾钩子（怎么结尾，让读者想看下一章）
+
+## 注意事项
+- constraints:        注意事项/禁忌（数组）
+- style_notes:        风格说明
+- reference_chapters: 参考章节（可以参考哪些已写章节）
+
+
+# ════════════════════════════════════════════════════════════
+#  四、取值表
+# ════════════════════════════════════════════════════════════
+
+## emotion（情绪类型）
+
+| 值        | 说明     | 适用场景            |
+|-----------|----------|---------------------|
+| 平静      | 日常     | 过渡、交代          |
+| 轻松      | 搞笑     | 日常、吐槽          |
+| 紧张      | 危机     | 战斗、逃亡          |
+| 悲伤      | 离别     | 死亡、分手          |
+| 愤怒      | 冲突     | 争吵、对峙          |
+| 喜悦      | 胜利     | 突破、成功          |
+| 恐惧      | 危险     | 面对强敌            |
+| 震惊      | 反转     | 真相揭露            |
+| 温暖      | 感动     | 守护、牺牲          |
+| 绝望      | 低谷     | 真败、至暗时刻      |
+| 释然      | 放下     | 和解、告别          |
+| 决心      | 抉择     | 重大决定            |
+
+## satisfaction_points（爽点类型）
+
+| 值     | 说明       |
+|--------|------------|
+| 打脸   | 证明对方错了 |
+| 装逼   | 展示隐藏实力 |
+| 反转   | 剧情180度转弯 |
+| 逆袭   | 从弱到强 |
+| 收获   | 获得新能力/物品/伙伴 |
+| 守护   | 保护重要的人 |
+| 牺牲   | 为他人付出 |
+| 揭秘   | 真相大白 |
+
+## character_changes.type（变化类型）
+
+| 值         | 说明       |
+|------------|------------|
+| realm      | 境界突破   |
+| ability    | 能力获得   |
+| relationship | 关系变化 |
+| status     | 状态变化   |
+| item       | 物品获取   |
+
+
+# ════════════════════════════════════════════════════════════
+#  五、示例
+# ════════════════════════════════════════════════════════════
+
+# ── 示例1：满潮夜（卷一高潮）──
+
+chapter: ch0095
+chapter_title: "满潮夜"
+volume: 1
+core_event: "水老大率队来袭，造浪池首秀，一浪拍碎黑帮船队"
+pov: 沈浮
+location: 造浪池
+characters: ["沈浮", "乐园中枢", "水老大", "彪哥"]
+word_count: 3000
+
+plot_objective: "水老大来袭→造浪池首秀→水老大之死"
+emotion_curve:
+  start: 紧张
+  middle: 愤怒
+  end: 喜悦
+tension_level: 8
+
+satisfaction_points:
+  - type: 打脸
+    description: "水老大按死在三十公分深的水里"
+  - type: 收获
+    description: "造浪池首次实战成功"
+
+foreshadows:
+  - foreshadow_id: fs001
+    action: advance
+    description: "造浪池的威力首次展现"
+
+character_changes:
+  - character: 沈浮
+    change: "证明乐园可以保护自己"
+    type: status
+  - character: 水老大
+    change: "死亡"
+    type: status
+
+scene_list:
+  - order: 1
+    location: 造浪池
+    characters: ["沈浮", "乐园中枢", "水老大"]
+    event: "水老大率队来袭"
+    emotion: 紧张
+    tension: 8
+  - order: 2
+    location: 造浪池
+    characters: ["沈浮", "彪哥"]
+    event: "彪哥被渔网打包抛出五百米"
+    emotion: 愤怒
+    tension: 6
+  - order: 3
+    location: 造浪池
+    characters: ["沈浮", "乐园中枢", "水老大"]
+    event: "一浪拍碎黑帮船队，水老大之死"
+    emotion: 喜悦
+    tension: 4
+
+opening_hook: "月黑风高，浪声轰鸣。水老大的船队出现在海平面上。"
+ending_hook: "水老大被按死在三十公分深的水里。'囤水者皆溺亡。'"
+
+constraints:
+  - "水老大死法锁死：儿童戏水池三十公分"
+  - "不许写成小丑，要写出'囤水者皆溺亡'的史诗感"
+
+reference_chapters: ["ch001", "ch003"]
+
+# ── 示例2：三姆觉醒（卷二高潮）──
+
+chapter: ch0179
+chapter_title: "卫队长"
+volume: 2
+core_event: "大嘴三姆三星觉醒，卫队长身份揭晓"
+pov: 沈浮
+location: 战场
+characters: ["沈浮", "大嘴三姆", "蓝博", "钢钩屠夫"]
+word_count: 3500
+
+plot_objective: "危急时刻→三姆觉醒→身份揭晓→反杀"
+emotion_curve:
+  start: 绝望
+  middle: 震惊
+  end: 喜悦
+tension_level: 9
+
+satisfaction_points:
+  - type: 装逼
+    description: "三姆从免费英灵变成三星传说"
+  - type: 反转
+    description: "卫队长身份揭晓"
+
+foreshadows:
+  - foreshadow_id: fs011
+    action: resolve
+    description: "三姆的卫队长身份揭晓"
+
+character_changes:
+  - character: 大嘴三姆
+    change: "三星觉醒，卫队长身份揭晓"
+    type: ability
+  - character: 大嘴三姆
+    change: "从一星到三星"
+    type: realm
+
+scene_list:
+  - order: 1
+    location: 战场
+    characters: ["沈浮", "蓝博", "钢钩屠夫"]
+    event: "被强敌包围，陷入绝境"
+    emotion: 绝望
+    tension: 9
+  - order: 2
+    location: 战场
+    characters: ["大嘴三姆", "沈浮"]
+    event: "三姆觉醒，三星突破"
+    emotion: 震惊
+    tension: 10
+  - order: 3
+    location: 战场
+    characters: ["大嘴三姆", "敌人"]
+    event: "卫队长下令，反杀"
+    emotion: 喜悦
+    tension: 6
+
+opening_hook: "蓝博倒下了，钢钩屠夫也倒下了。只剩沈浮一个人站在那里。"
+ending_hook: "'卫队长，启，归队。'三姆的声音变了。"
+
+constraints:
+  - "觉醒前零闪回，不能提前暴露身份"
+  - "觉醒后文武分明：平时憨，战时狠"
+
+reference_chapters: ["ch008", "ch010"]
+
+# ── 示例3：中枢坦白（卷九转折）──
+
+chapter: ch0838
+chapter_title: "坦白夜"
+volume: 9
+core_event: "乐园中枢坦白，自称从'本中枢'变'俺'"
+pov: 沈浮
+location: 乐园
+characters: ["沈浮", "乐园中枢", "大嘴三姆"]
+word_count: 4000
+
+plot_objective: "谎言累积→坦白→信任重建"
+emotion_curve:
+  start: 压抑
+  middle: 震惊
+  end: 释然
+tension_level: 10
+
+satisfaction_points:
+  - type: 揭秘
+    description: "中枢的谎言揭晓"
+  - type: 反转
+    description: "坦白不是背叛，是信任"
+
+foreshadows:
+  - foreshadow_id: fs080
+    action: resolve
+    description: "中枢的坦白"
+
+character_changes:
+  - character: 乐园中枢
+    change: "坦白，自称从'本中枢'变'俺'"
+    type: status
+  - character: 沈浮
+    change: "选择原谅"
+    type: relationship
+
+scene_list:
+  - order: 1
+    location: 乐园
+    characters: ["沈浮", "乐园中枢"]
+    event: "沈浮发现中枢的谎言"
+    emotion: 压抑
+    tension: 8
+  - order: 2
+    location: 乐园
+    characters: ["乐园中枢"]
+    event: "中枢坦白一切"
+    emotion: 震惊
+    tension: 10
+  - order: 3
+    location: 乐园
+    characters: ["沈浮", "乐园中枢"]
+    event: "沈浮选择原谅，中枢改口叫'俺'"
+    emotion: 释然
+    tension: 4
+
+opening_hook: "五次静默，每一次都是谎言。'本中枢'，你说过几次真话？"
+ending_hook: "'俺……俺等你。'"
+
+constraints:
+  - "坦白锁死838-844，不能提前也不能推后"
+  - "此前任何隐瞒不许被识破"
+  - "自称变化：本中枢→俺"
+
+reference_chapters: ["ch554", "ch707", "ch839"]
+
+
+# ════════════════════════════════════════════════════════════
+#  六、与LLM的集成
+# ════════════════════════════════════════════════════════════
+
+细纲会直接注入LLM的prompt：
+
+1. 读取当前章节的细纲
+2. 提取关键信息（核心事件、出场角色、情绪曲线、约束）
+3. 注入到prompt的"本章任务"部分
+4. LLM根据细纲生成章节
+
+## Token预算分配
+
+细纲占Token预算的3%（约384 tokens for 128K context）：
+
+  本章核心信息：~200 tokens
+  本章场景安排：~100 tokens
+  本章约束条件：~84 tokens
+
+
+# ════════════════════════════════════════════════════════════
+#  七、与其他系统的关联
+# ════════════════════════════════════════════════════════════
+
+1. 大纲
+   - 细纲的 volume → 大纲的 volumes
+   - 细纲的 core_event → 大纲的 key_events
+
+2. 场景切片
+   - 细纲的 scene_list → scenes.json
+   - 细纲的 emotion_curve → 场景的 emotion
+
+3. 伏笔系统
+   - 细纲的 foreshadows → 伏笔的推进/回收
+   - 细纲的 foreshadow_id → 伏笔的 ID
+
+4. 角色档案
+   - 细纲的 characters → 角色档案的 name
+   - 细纲的 character_changes → 角色档案的 growth_arc
+
+5. 爽点审查
+   - 细纲的 satisfaction_points → 爽点审查的记录
+   - 细纲的 emotion_curve → 爽点审查的节奏分布
+
+6. 上下文引擎
+   - 细纲的当前章信息 → 注入prompt
+   - 帮助LLM理解这一章该写什么
