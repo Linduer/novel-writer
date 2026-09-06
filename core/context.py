@@ -519,7 +519,7 @@ class ContextEngine:
         facts = context.get('facts', [])
         if facts:
             facts_text = "\n".join([
-                f"- [{f.get('type', 'general')}] {f.get('content', '')}"
+                f"- [{f.get('importance', 'medium')}] {f.get('content', '')}"
                 for f in facts
             ])
             formatted_parts.append(f"## 动态事实表\n{facts_text}")
