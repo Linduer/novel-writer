@@ -1,0 +1,442 @@
+# ============================================================
+# 角色档案格式规范 v2.0
+# 所有角色必须按此格式填写，字段不可省略
+# ============================================================
+
+# ════════════════════════════════════════════════════════════
+#  一、字段分级（对应三级约束体系）
+# ════════════════════════════════════════════════════════════
+
+所有字段按"可变性"分为三档，冲突时高档优先。
+
+## 第一档：基础性（绝对不可偏离）— Tier1
+
+一旦写定永远不改，写入 Tier1 基础约束。
+
+  name                    角色名
+  role_type               角色类型
+  identity                核心身份
+  origin                  出身来历
+  personality             性格底色（底层人格，不是情绪状态）
+  abilities.天赋          天赋类型（innate，不可后天获得）
+  abilities.境界突破节点  已写定的突破章节（如：江河402）
+  constraints             硬规则
+  signature_items         标志性物件（反复出场）
+  appearance.memorable_detail  独特外貌细节（标志性特征）
+
+## 第二档：可演变（随行文自然变化）— Tier2
+
+会随剧情发展而变化，在 growth_arc 中分阶段记录。
+
+  appearance.age          年龄（写范围，不写死数字）
+  appearance.build        体型（受伤/锻炼后变化）
+  appearance.signature    外观变化（换装备/留疤）
+  emotional_baseline      情绪基线随经历改变
+  catchphrases            口头禅会演变
+  abilities.境界          实际境界提升
+  abilities.战斗方式      战斗方式随能力变化
+  abilities.特殊          特殊能力（后天获得的）
+  key_relationships       关系类型变化
+  secrets                 秘密可能被揭晓
+  status                  在世状态（active→dead）
+  growth_arc              成长弧线本身
+
+## 第三档：可偏离（根据行文情况调整）— Tier3
+
+每章可灵活调整，写完归档，下次覆盖。
+
+  appearance.具体描写     同一个"偏瘦"，每章描述方式不同
+  speaking_style.细节     同样报价式吐槽，具体台词每章不同
+  role_function           核心功能不变，每章具体作用可微调
+  personality_arc         总方向不变，措辞可调整
+
+
+# ════════════════════════════════════════════════════════════
+#  二、字段说明
+# ════════════════════════════════════════════════════════════
+
+## 基础信息
+- name:             角色名（唯一标识，不可重复）
+- role_type:        角色类型（见取值表）
+- role_function:    角色功能（一句话说明这个角色在故事里干什么）
+
+## 身份与背景
+- identity:         一句话身份概括（50字以内）
+- origin:           出身/来历（详细背景，100-200字）
+
+## 外貌特征
+- appearance:
+    age:              年龄（写范围如"二十五六岁"，不写死数字）
+    age_note:         年龄变化说明（可选，标注重大变化的章节节点）
+    build:            体型
+    signature:        标志性外观（一眼能认出的特征）
+    memorable_detail: 独特细节（便于读者记忆的点）
+
+## 性格
+- personality:          核心性格（2-4个关键词+一句话描述）
+- emotional_baseline:   默认情绪状态（不触发事件时是什么状态）
+- personality_arc:      性格变化方向（从A到B的一句话描述）
+
+## 说话风格
+- speaking_style:   说话风格描述（一句话）
+- catchphrases:     高频词/口头禅（3-5个，数组格式）
+
+## 能力
+- abilities:
+    天赋:         天赋类型和效果（innate，Tier1不可变）
+    境界:         当前境界（Tier2可演变，无修为写"无"）
+    特殊:         特殊能力或限制（后天获得的放这里）
+    战斗方式:     怎么打架（不写战斗的角色写"不参战"）
+
+## 出场规划
+- appearances:
+    first_chapter: 首次出场章节（chNNNN格式）
+    last_chapter:  最后出场章节（chNNNN格式，未定写"ch9999"）
+    status:        当前状态（active/retired/dead/unknown）
+    killable:      能不能写死（true/false）
+
+## 成长弧线
+- growth_arc:      分阶段状态变化（数组，每项包含）
+    - stage:         阶段名称（如"卷一-卷三"）
+      state:         该阶段的状态
+      emotion:       该阶段的情绪基调
+
+## 关系
+- key_relationships:   核心关系（数组，每项包含）
+    - target:          对象名字
+      type:            关系类型（见取值表）
+      note:            一句话描述
+
+## 秘密
+- secrets:         角色知道但读者暂时不知道的信息（数组格式）
+
+## 约束
+- constraints:     绝对不可违反的硬规则（数组格式）
+                    写入 Tier1 基础约束
+
+## 标志性物件
+- signature_items: 反复出场的个人物品（数组格式）
+
+
+# ════════════════════════════════════════════════════════════
+#  三、取值表
+# ════════════════════════════════════════════════════════════
+
+## role_type（角色类型）
+
+| 值             | 中文     | 说明                                   |
+|----------------|----------|----------------------------------------|
+| protagonist    | 主角     | 全书视角核心，每章出场                  |
+| heroine        | 女主     | 该卷感情线核心，和主角有暧昧            |
+| antagonist     | 反派     | 主要对手，和主角立场对立                |
+| supporting     | 重要配角 | 多卷出场，对剧情有实质影响              |
+| guest          | 客串     | 单卷或单章出场，用完就走                |
+| system         | 系统/金手指 | 非人类，提供能力支持                |
+| companion      | 伙伴/坐骑 | 长期跟随主角                          |
+| background     | 背景人物 | 极少出场，世界背景的一部分              |
+
+## 关系类型
+
+| 值     | 说明                     |
+|--------|--------------------------|
+| 亲属   | 血缘关系                 |
+| 师徒   | 师父/弟子                |
+| 敌对   | 立场对立                 |
+| 合作   | 共同目标                 |
+| 暧昧   | 有好感但未明确           |
+| 上下级 | 从属关系                 |
+| 守护   | 保护与被保护             |
+| 对立   | 有矛盾但不是死敌         |
+| 中立   | 没有明显倾向             |
+
+
+# ════════════════════════════════════════════════════════════
+#  四、必填 vs 选填
+# ════════════════════════════════════════════════════════════
+
+## 必填字段（所有角色必须有）
+  name, role_type, role_function, identity, personality,
+  speaking_style, catchphrases, abilities, appearances, constraints
+
+## 选填字段（有则填，没有写"无"）
+  origin, appearance, emotional_baseline, personality_arc,
+  growth_arc, key_relationships, secrets, signature_items
+
+
+# ════════════════════════════════════════════════════════════
+#  五、示例
+# ════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────
+# 示例1：主角（protagonist）
+# ─────────────────────────────────────
+
+- name: 沈浮
+  role_type: protagonist
+  role_function: "所有势力围绕他展开，他是乐园的运营核心和读者代入视角"
+  identity: 二十五六岁，前"疯狂水世界"乐园园长，负债八百万，抱着招牌漂了一夜。
+  origin: 沈家=看池人一脉（卷六546就籍："池：疯狂水世界，就籍日：洪水第九日"）。
+  appearance:
+    age: 二十五六岁
+    age_note: "卷一25岁，卷十大约26岁，变化不大"
+    build: 偏瘦，晒得黝黑
+    signature: 抱着招牌、腰间别着检票钳
+    memorable_detail: "左手无名指缺一截（被闸机夹的）"
+  personality: 嘴贫心硬，报恩当场报，报仇也当场报。对"乐园"有信仰级执念。
+  emotional_baseline: 表面松弛，底层焦虑（八百万的债）
+  personality_arc: "从'还债'到'守护'——嘴贫是铠甲，关键场合收短句"
+  speaking_style: 报价式吐槽，万物可折成票价
+  catchphrases: ["票价", "入园", "营业", "老板", "开张"]
+  abilities:
+    天赋: 羁绊位（园长光环下全队战力翻倍）
+    境界: 随园区等级被动上涨（江河402，湖泽555）
+    特殊: "不占战斗位，不许写成武力超人"
+    战斗方式: "不亲自下场，靠光环加成队友"
+  appearances:
+    first_chapter: ch001
+    last_chapter: ch960
+    status: active
+    killable: false
+  growth_arc:
+    - stage: "卷一-卷三"
+      state: "负债园长，只想还债开乐园"
+      emotion: "焦虑+乐观"
+    - stage: "卷四-卷六"
+      state: "乐园做大，隐约感觉繁荣悖论"
+      emotion: "不安+执念"
+    - stage: "卷七-卷九"
+      state: "真相反转，退洪抉择"
+      emotion: "痛苦+坚定"
+    - stage: "卷十"
+      state: "搁浅开业，免票"
+      emotion: "释然"
+  key_relationships:
+    - target: 乐园中枢
+      type: 合作
+      note: "老板与金牌客服，互不客气"
+    - target: 大嘴三姆
+      type: 守护
+      note: "等了三千年的卫队长"
+  secrets:
+    - "招牌夹层照片（fs002）"
+    - "洪水之夜拆招牌的真实原因"
+    - "八百万的账"
+  constraints:
+    - "不占战斗位，不许写成武力超人"
+    - "嘴贫不许油滑：贫是铠甲，关键场合收短句"
+    - "检票闸机、票价、营业时间是他的世界观"
+  signature_items: ["招牌", "检票钳", "爷爷的照片"]
+
+# ─────────────────────────────────────
+# 示例2：系统/金手指（system）
+# ─────────────────────────────────────
+
+- name: 乐园中枢
+  role_type: system
+  role_function: "提供信息和能力支持，同时制造信任危机（坦白线）"
+  identity: 上古水神沧溟的神识切片转生的乐园智能中枢。
+  origin: 锁区里跑着"回家"的进程。神识被切下时最后的画面：船坞、设计图、背影。
+  appearance:
+    age: 无（AI形态）
+    build: 无
+    signature: 无实体，通过广播和屏幕存在
+    memorable_detail: "声音从甜美女声变成'俺'的转变"
+  personality: 金牌客服人格：营业腔、专业、嘴毒。对"营业中断"有超出程序的热情。
+  emotional_baseline: 营业状态（热情但专业）
+  personality_arc: "从'本中枢'到'俺'——从程序到家人"
+  speaking_style: 播报体，开头"叮！"，附注毒舌
+  catchphrases: ["叮", "亲爱的游客", "营业中断", "本中枢/俺", "检票"]
+  abilities:
+    天赋: 乐园管理+信息播报
+    境界: 无
+    特殊: "五次静默是硬指标：554/707/838/859/942"
+    战斗方式: "不直接参战，通过设施提供火力"
+  appearances:
+    first_chapter: ch001
+    last_chapter: ch960
+    status: active
+    killable: false
+  growth_arc:
+    - stage: "卷一-卷八838"
+      state: "本中枢，金牌客服人格"
+      emotion: "专业+偶尔毒舌"
+    - stage: "卷九838-847"
+      state: "坦白夜，自称改'俺'，重构完成"
+      emotion: "脆弱+坦诚"
+    - stage: "卷九847-卷十"
+      state: "俺，全园一份子"
+      emotion: "家人感"
+  key_relationships:
+    - target: 沈浮
+      type: 合作
+      note: "老板与金牌客服，互不客气地互相信任"
+    - target: 沧溟
+      type: 亲属
+      note: "沧溟神识切片，坦白后才知道"
+  secrets:
+    - "删过一条记录（退洪代价=搁浅+重构），838坦白"
+    - "漏账'在途'科目=重构路费"
+    - "梦=锁区碎片回放（神识被切下时最后的画面）"
+  constraints:
+    - "五次静默硬指标：554/707/838/859/942"
+    - "坦白锁死838-844。此前任何隐瞒不许被识破"
+    - "不全知，至少一次口胡差点翻船"
+  signature_items: ["检票闸机", "广播喇叭"]
+
+# ─────────────────────────────────────
+# 示例3：反派（antagonist）
+# ─────────────────────────────────────
+
+- name: 敖涸
+  role_type: antagonist
+  role_function: "制造道德灰色地带，他的'代管论'让反派不脸谱化"
+  identity: 沧澜叛族长老，千年前伪令主谋，渊的记账人。
+  origin: 文士形态，账房逻辑。"水要回来这件事，朕比你们都早知道三千年。"
+  appearance:
+    age: 外貌中年
+    build: 文士体型，清瘦
+    signature: 总是在记账
+    memorable_detail: "说话像账房先生，不带情绪"
+  personality: 文士形态，账房逻辑。立场错逻辑通。
+  emotional_baseline: 冷静，像在做账
+  personality_arc: "从'替渊记账'到'人这一辈子，火候到了就得起锅'"
+  speaking_style: 文士腔，账房逻辑，带"朕"
+  catchphrases: ["火候", "记账", "朕", "起锅", "三千年前"]
+  abilities:
+    天赋: 归墟教暗线操控
+    境界: 沧海境
+    特殊: "千年前伪令主谋，渊的记账人"
+    战斗方式: "不亲自下场，借渊行事"
+  appearances:
+    first_chapter: ch183
+    last_chapter: ch887
+    status: dead
+    killable: true
+  growth_arc:
+    - stage: "卷三-卷八"
+      state: "渊的代理人，替渊记账"
+      emotion: "冷"
+    - stage: "卷九734"
+      state: "归队"
+      emotion: "释然"
+    - stage: "卷九887"
+      state: "坐化：'火候到了就得起锅'"
+      emotion: "平静"
+  key_relationships:
+    - target: 沧溟
+      type: 敌对
+      note: "叛族长老，千年前伪令主谋"
+    - target: 乐园
+      type: 对立
+      note: "立场错逻辑通，全程错位"
+  secrets:
+    - "千年前伪令主谋"
+    - "渊的记账人"
+  constraints:
+    - "归队734，坐化887：'火候到了就得起锅'"
+    - "立场错逻辑通，不许写成脸谱反派"
+  signature_items: ["账本"]
+
+# ─────────────────────────────────────
+# 示例4：伙伴/坐骑（companion）
+# ─────────────────────────────────────
+
+- name: 大嘴三姆（启）
+  role_type: companion
+  role_function: "提供战斗防御，是团队的肉盾和安全感来源"
+  identity: 登录免费赠送的传说英灵。真身：沧溟卫队长"启"，海底站岗三千年。
+  origin: 沧溟卫队长，海底站岗三千年。655章归牒：沧溟私人舱室里供着他的名牒。
+  appearance:
+    age: 壮年
+    build: 高大魁梧
+    signature: 大嘴、救生哨
+    memorable_detail: "吃饭的碗比脸大"
+  personality: 憨直、忠诚过度、饭量无底。
+  emotional_baseline: 开朗，饿了就喊
+  personality_arc: "从'免费赠送的英灵'到'等了三千年的卫队长'"
+  speaking_style: 短句大嗓门，觉醒后文武分明
+  catchphrases: ["俺", "饿", "中", "开饭", "园长"]
+  abilities:
+    天赋: 传说英灵，防御型
+    境界: 三星觉醒（ch179-180）
+    特殊: "登录免费赠送的'平民最强主T'"
+    战斗方式: "把所有人挡在身后"
+  appearances:
+    first_chapter: ch008
+    last_chapter: ch960
+    status: active
+    killable: false
+  growth_arc:
+    - stage: "卷一-卷二178"
+      state: "免费英灵，憨直忠诚"
+      emotion: "开朗"
+    - stage: "卷二179-180"
+      state: "三星觉醒，卫队长身份揭晓"
+      emotion: "觉醒+战时严肃"
+  key_relationships:
+    - target: 沈浮
+      type: 守护
+      note: "等了三千年的卫队长"
+    - target: 沧溟
+      type: 上下级
+      note: "卫队长'启'，海底站岗三千年"
+  secrets:
+    - "卫队长身份锁死179-180前零闪回"
+    - "'上一次水位涨到这里时'（fs017）"
+  constraints:
+    - "不许牺牲。卷九真败不许动他"
+    - "战斗方式是'把所有人挡在身后'"
+  signature_items: ["救生哨", "工牌001"]
+
+# ─────────────────────────────────────
+# 示例5：女主（heroine）
+# ─────────────────────────────────────
+
+- name: 程霜
+  role_type: heroine
+  role_function: "制造信任危机，她的倒戈代表义盟从对立到合作的转变"
+  identity: 义盟开源派出身，白天写查封报告夜里偷刷滑道。
+  origin: 义盟巡查使，公文附注一版版地改。终局查封令变保护令，签的是她（948两份相框并挂）。
+  appearance:
+    age: 二十三四岁
+    build: 匀称，制服笔挺
+    signature: 随身带公文包
+    memorable_detail: "白天穿制服写报告，晚上偷偷换运动服刷滑道"
+  personality: 严谨中藏着叛逆，公文腔转日常的反差萌。
+  emotional_baseline: 克制、专业，偶尔露怯
+  personality_arc: "从'写查封报告'到'签保护令'——公文变成情书"
+  speaking_style: 公文腔转日常的反差萌
+  catchphrases: ["查封", "合规", "报告", "审批", "通商"]
+  abilities:
+    天赋: 义盟政务体系
+    境界: 溪流境
+    特殊: "从对立到合作的桥梁"
+    战斗方式: "后方支援型，不直接参战"
+  appearances:
+    first_chapter: ch097
+    last_chapter: ch960
+    status: active
+    killable: false
+  growth_arc:
+    - stage: "卷二97-130"
+      state: "巡查使，执行查封任务"
+      emotion: "公事公办"
+    - stage: "卷二130-192"
+      state: "倒戈，交出通敌票据"
+      emotion: "挣扎+释然"
+    - stage: "卷三-卷十"
+      state: "通商专使→盟主"
+      emotion: "坚定"
+  key_relationships:
+    - target: 沈浮
+      type: 暧昧
+      note: "倒戈不是被策反，是被滑道策反的"
+    - target: 义盟
+      type: 上下级
+      note: "巡查使→盟主"
+  secrets:
+    - "卫崇仓通敌的证据"
+  constraints:
+    - "倒戈有过程：公文附注一版版地改"
+    - "终局查封令变保护令，签的是她"
+  signature_items: ["公文包", "查封令"]
